@@ -525,6 +525,7 @@ UCxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" style="width:100%;padding:10px 12
 <script>
 // ── INIT ──────────────────────────────────────────────────
 let channels = [], apiKeys = [];
+let isRefreshing = false;
 let arSettings = {enabled: true, hour: 6, stage2Threshold: 100, warnThreshold: 70}; // auto-refresh + threshold settings
 let lastYTRefresh = null; // tanggal terakhir refresh YouTube
 let newStage2Alerts = []; // notif channel baru masuk Tahap 2, di-share via Sheets
@@ -640,7 +641,7 @@ function doLogout(){
 // ── Google Sheets sync ────────────────────────────────────
 async function loadFromSheets(){
   // Jangan load dari Sheets kalau sedang ada proses save — hindari overwrite data baru
-  if(_saving||_pendingSave){ setSyncSt("⟳ Sync ditunda (sedang menyimpan)...","#3266ad"); return; }
+  if(_saving||_pendingSave||isRefreshing){ setSyncSt("⟳ Sync ditunda (sedang memproses data)...","#3266ad"); return; }
   setSyncSt("⟳ Memuat data dari Sheets...","#3266ad");
   try{
     const r=await fetch(SHEETS_URL+"?t="+Date.now());const d=await r.json();
@@ -1001,37 +1002,59 @@ async function refreshOne(id,skipSave=false){
     channels=channels.map(c=>c.id===id?{...c,...data,stage:ns,stageDate:sd,firstVideoDate:nfd,stageOverride:ch.stageOverride,downgradeNote,isError:false,errorMessage:null,erroredAt:null}:c);
     if(!skipSave)await saveToSheets();}
   catch(e){
-    // Non-blocking: channel dihapus/disuspend di YouTube — tandai isError, JANGAN alert()
-    // supaya tidak menghentikan loop background refreshAll().
+    // Bedakan error "Channel tidak ditemukan" (banned/dihapus) vs error lain (quota/network)
     const msg=e.message||"Channel tidak dapat diakses (kemungkinan dihapus/disuspend)";
-    channels=channels.map(c=>c.id===id?{...c,isError:true,errorMessage:msg,erroredAt:new Date().toISOString()}:c);
-    showToast(`Gagal refresh "${ch.name||ch.inputValue||"channel"}": ${msg}`,"error");
-    if(!skipSave)await saveToSheets();
+    if(msg==="Channel tidak ditemukan"){
+      // Channel benar-benar banned/dihapus di YouTube — tandai isError
+      channels=channels.map(c=>c.id===id?{...c,isError:true,errorMessage:msg,erroredAt:new Date().toISOString()}:c);
+      showToast(`Channel "${ch.name||ch.inputValue||"channel"}" tidak ditemukan (banned/dihapus).`,"error");
+      if(!skipSave)await saveToSheets();
+    } else {
+      // Quota habis / network error — JANGAN ubah isError, lempar error ke atas
+      // supaya refreshAll() bisa break loop (hemat API quota)
+      showToast(`Gagal: ${msg}`,"error");
+      loading[id]=false;render();
+      throw e; // re-throw agar refreshAll() bisa menangkap & break loop
+    }
   }
   loading[id]=false;render();
 }
 async function refreshAll(auto=false){
+  if(isRefreshing)return; // Cegah concurrent refresh loops
   if(!apiKeys.length){if(!auto)showToast("Tambah API Key dulu.","warning");return;}
-  // Channel yang sudah di-sampah-kan (soft delete) dilewati — tidak perlu buang kuota API utk channel yang sengaja diabaikan
-  const targets=channels.filter(c=>!c.isTrashed);
+  isRefreshing=true;
   const btn=document.getElementById("btn-ref-all"),ico=document.getElementById("ref-ico");
   btn.disabled=true;ico.className="spin";
-  const total=targets.length;
-  for(let i=0;i<targets.length;i++){
-    const ch=targets[i];
-    const pct=Math.round((i/total)*100);
-    const bar="█".repeat(Math.round(pct/10))+"░".repeat(10-Math.round(pct/10));
-    setSyncSt(`⟳ Refresh ${i+1}/${total} · ${pct}% [${bar}] — ${ch.name||ch.inputValue}...`,"#3266ad");
-    await refreshOne(ch.id, true);
-    // Jeda 300-500ms antar channel — mencegah 429 (Too Many Requests) saat refresh puluhan channel beruntun
-    if(i<targets.length-1) await sleep(300+Math.random()*200);
+  try{
+    // Channel yang sudah di-sampah-kan atau error (banned) dilewati — hemat kuota API
+    const targets=channels.filter(c=>!c.isTrashed&&!c.isError);
+    const total=targets.length;
+    let refreshed=0;
+    for(let i=0;i<targets.length;i++){
+      const ch=targets[i];
+      const pct=Math.round((i/total)*100);
+      const bar="█".repeat(Math.round(pct/10))+"░".repeat(10-Math.round(pct/10));
+      setSyncSt(`⟳ Refresh ${i+1}/${total} · ${pct}% [${bar}] — ${ch.name||ch.inputValue}...`,"#3266ad");
+      try{
+        await refreshOne(ch.id, true);
+        refreshed++;
+      }catch(e){
+        // refreshOne re-throws non-banned errors (quota/network) — break loop early
+        showToast(`Loop dihentikan: ${e.message}. ${refreshed} dari ${total} channel berhasil di-refresh.`,"warning");
+        break;
+      }
+      // Jeda 300-500ms antar channel — mencegah 429 (Too Many Requests) saat refresh puluhan channel beruntun
+      if(i<targets.length-1) await sleep(300+Math.random()*200);
+    }
+    lastYTRefresh=new Date().toISOString(); // simpan timestamp ISO penuh (fix bug "07:00 AM" UTC)
+    await saveToSheets();
+    setSyncSt("✓ "+refreshed+" channel di-refresh — "+fmtDtT(lastYTRefresh),"var(--ok)");
+    showToast(`Refresh selesai — ${refreshed} channel diperbarui.`,"success");
+    renderArBar();
+  }finally{
+    isRefreshing=false;
+    ico.className="";btn.disabled=false;
   }
-  lastYTRefresh=new Date().toISOString(); // simpan timestamp ISO penuh (fix bug "07:00 AM" UTC)
-  await saveToSheets();
-  ico.className="";btn.disabled=false;
-  setSyncSt("✓ Semua "+total+" channel di-refresh — "+fmtDtT(lastYTRefresh),"var(--ok)");
-  showToast(`Refresh selesai — ${total} channel diperbarui.`,"success");
-  renderArBar();
 }
 function changeStage(id,s){channels=channels.map(c=>c.id===id?{...c,stage:parseInt(s),stageDate:today(),stageOverride:true}:c);saveToSheets();render();}
 function resetStageOverride(id){channels=channels.map(c=>c.id===id?{...c,stageOverride:false}:c);saveToSheets();render();}
