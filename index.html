@@ -1,0 +1,1130 @@
+<html lang="id"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Channel Monitor</title>
+<script>
+// ═══════════════════════════════════════════════════════════
+// KONFIGURASI — diisi otomatis oleh sistem, jangan diedit manual
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwM2BtCdFFBGjafQKpvW5PTv13QO3NFNSus4AeVNFVBhCgUi5xbdeJsQF1TXRfM9-2d/exec";
+const TEAM_PIN   = "siappakai";
+// ═══════════════════════════════════════════════════════════
+</script>
+<style>
+:root{
+  --red:#ff0000;--red-dk:#cc0000;
+  --bg:#f5f5f5;--surf:#fff;--surf2:#f0f0f0;
+  --bdr:rgba(0,0,0,0.09);--bdr2:rgba(0,0,0,0.18);
+  --txt:#111;--txt2:#555;--txt3:#999;
+  --r:10px;--r-sm:6px;--shd:0 1px 3px rgba(0,0,0,0.07);
+  --b-bg:#E6F1FB;--b-txt:#0C447C;--b-bar:#3266ad;
+  --g-bg:#EAF3DE;--g-txt:#27500A;--g-bar:#639922;
+  --t-bg:#E1F5EE;--t-txt:#085041;--t-bar:#0F6E56;
+  --ok:#2e7d32;--warn:#e65100;--danger:#c0392b;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0f0f0f;--surf:#1a1a1a;--surf2:#252525;
+  --bdr:rgba(255,255,255,0.09);--bdr2:rgba(255,255,255,0.2);
+  --txt:#f1f1f1;--txt2:#aaa;--txt3:#666;
+  --b-bg:#0C2240;--b-txt:#85B7EB;--g-bg:#173404;--g-txt:#C0DD97;--t-bg:#04342C;--t-txt:#5DCAA5;
+  --shd:0 1px 3px rgba(0,0,0,0.4);
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;min-height:100vh}
+.screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;z-index:200;padding:20px;overflow-y:auto}
+.screen-box{background:var(--surf);border:1px solid var(--bdr2);border-radius:var(--r);padding:28px;width:100%;max-width:560px;margin:auto;box-shadow:0 4px 24px rgba(0,0,0,0.1)}
+.s-logo{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.logo-box{width:34px;height:34px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-box svg{width:19px;height:19px;fill:#fff}
+.s-logo h1{font-size:17px;font-weight:700}
+.s-logo p{font-size:12px;color:var(--txt3)}
+.step-wrap{display:flex;flex-direction:column;gap:14px;margin-bottom:20px}
+.step{display:flex;gap:12px}
+.step-n{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-body{flex:1;font-size:13px;color:var(--txt2);line-height:1.65}
+.step-body strong{color:var(--txt)}.step-body a{color:var(--b-txt)}
+.code-block{background:var(--surf2);border:1px solid var(--bdr2);border-radius:var(--r-sm);padding:10px 12px;font-size:11px;font-family:monospace;white-space:pre;overflow-x:auto;line-height:1.6;margin:8px 0;position:relative}
+.copy-btn{position:absolute;top:6px;right:6px;padding:2px 8px;font-size:10px;border:1px solid var(--bdr2);border-radius:4px;background:var(--surf);color:var(--txt2);cursor:pointer}
+.copy-btn:hover{background:var(--surf2)}
+.divider{height:1px;background:var(--bdr);margin:18px 0}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:5px}
+.field input{width:100%;height:40px;padding:0 12px;border:1px solid var(--bdr2);border-radius:var(--r-sm);background:var(--surf);color:var(--txt);font-size:13px;font-family:inherit}
+.field input:focus{outline:none;border-color:var(--red)}
+.field .help{font-size:11px;color:var(--txt3);margin-top:5px;line-height:1.5}
+.s-err{font-size:12px;color:var(--danger);padding:8px 12px;background:#fff5f5;border-radius:var(--r-sm);border:1px solid #ffcdd2;margin-top:10px}
+.btn-full{width:100%;height:42px;border:none;border-radius:var(--r-sm);background:var(--red);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;transition:background .15s}
+.btn-full:hover{background:var(--red-dk)}.btn-full:disabled{opacity:.5;cursor:not-allowed}
+.btn-link{background:none;border:none;color:var(--txt3);font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit;margin-top:10px;display:block;text-align:center}
+
+/* Download step */
+.dl-box{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:var(--r);padding:20px;text-align:center}
+.dl-box h3{font-size:16px;font-weight:700;color:#1b5e20;margin-bottom:8px}
+.dl-box p{font-size:13px;color:#2e7d32;margin-bottom:16px;line-height:1.6}
+.dl-steps{text-align:left;margin-bottom:16px;display:flex;flex-direction:column;gap:8px}
+.dl-step{display:flex;gap:10px;font-size:13px;color:#2e7d32;align-items:flex-start}
+.dl-step .n{width:20px;height:20px;border-radius:50%;background:#2e7d32;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+@media(prefers-color-scheme:dark){.dl-box{background:#1b2e1b;border-color:#2e7d32}.dl-box h3,.dl-box p,.dl-step{color:#81c784}.dl-step .n{background:#388e3c}}
+
+/* PIN */
+.screen-box.pin-box{max-width:300px;text-align:center}
+
+
+/* APP */
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 48px}
+header{position:sticky;top:0;background:var(--bg);z-index:20;padding:12px 0 10px;border-bottom:1px solid var(--bdr);margin-bottom:14px}
+.hd-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;margin-right:auto}
+.logo h1{font-size:15px;font-weight:700}
+.logo span{font-size:12px;color:var(--txt3);font-weight:400}
+.api-section{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;margin-bottom:12px}
+.api-hd{display:flex;align-items:center;gap:8px}
+.api-hd span{font-size:13px;font-weight:600;flex:1}
+.api-keys-list{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.api-key-row{display:flex;gap:6px;align-items:center}
+.api-key-row input{flex:1;height:30px;padding:0 10px;border:1px solid var(--bdr2);border-radius:var(--r-sm);background:var(--surf2);color:var(--txt);font-size:11px;font-family:monospace}
+.key-st{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap}
+.key-st.ok{background:var(--g-bg);color:var(--g-txt)}.key-st.err{background:#ffebee;color:var(--danger)}.key-st.idle{background:var(--surf2);color:var(--txt3)}.key-st.active{background:var(--b-bg);color:var(--b-txt)}
+.api-add-row{display:flex;gap:6px;margin-top:6px}
+.api-add-row input{flex:1;height:30px;padding:0 10px;border:1px solid var(--bdr);border-radius:var(--r-sm);background:var(--surf2);color:var(--txt);font-size:11px;font-family:monospace}
+.btn{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 12px;border:1px solid var(--bdr2);border-radius:var(--r-sm);background:var(--surf);color:var(--txt);cursor:pointer;font-size:12px;font-family:inherit;transition:background .15s;white-space:nowrap;text-decoration:none}
+.btn:hover{background:var(--surf2)}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-red{background:var(--red);color:#fff;border-color:var(--red)}.btn-red:hover{background:var(--red-dk)}
+.btn-sm{height:26px;padding:0 9px;font-size:11px}.btn-icon{width:26px;height:26px;padding:0;justify-content:center}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 12px}
+.stat .lbl{font-size:11px;color:var(--txt3);margin-bottom:2px}.stat .num{font-size:20px;font-weight:700}
+.stat.s1 .lbl,.stat.s1 .num{color:var(--b-txt)}.stat.s2 .lbl,.stat.s2 .num{color:var(--g-txt)}.stat.s3 .lbl,.stat.s3 .num{color:var(--t-txt)}
+.filters{display:flex;gap:2px;margin-bottom:10px;border-bottom:1px solid var(--bdr)}
+.ftab{padding:6px 14px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--txt2);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit}
+.ftab:hover{color:var(--txt)}.ftab.active{color:var(--txt);border-bottom-color:var(--red);font-weight:600}
+.ch-row{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:6px;box-shadow:var(--shd);overflow:hidden}
+.ch-row:hover{border-color:var(--bdr2)}
+.ch-row.urgent{border-left:4px solid var(--danger);background:rgba(192,57,43,0.04)}
+.ch-row.urgent .row-head{background:rgba(192,57,43,0.03)}
+.ch-row.near2{border-left:4px solid #ffb300;background:rgba(255,179,0,0.04)}
+.ch-row.near2 .row-head{background:rgba(255,179,0,0.03)}
+.ch-row.expanded{border-color:var(--bdr2)}
+@media(prefers-color-scheme:dark){
+  .ch-row.urgent{background:rgba(255,100,80,0.06)}.ch-row.urgent .row-head{background:rgba(255,100,80,0.04)}
+  .ch-row.near2{background:rgba(255,179,0,0.06)}.ch-row.near2 .row-head{background:rgba(255,179,0,0.04)}
+}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,0.35)}60%{box-shadow:0 0 0 5px rgba(192,57,43,0)}}
+@keyframes pulse-yellow{0%,100%{box-shadow:0 0 0 0 rgba(255,179,0,0.4)}60%{box-shadow:0 0 0 5px rgba(255,179,0,0)}}
+.row-head{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;user-select:none}
+.row-av{width:34px;height:34px;border-radius:50%;background:var(--surf2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--txt2);overflow:hidden;border:1px solid var(--bdr)}
+.row-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.row-name{font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-badges{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.badge-1{background:var(--b-bg);color:var(--b-txt)}.badge-2{background:var(--g-bg);color:var(--g-txt)}.badge-3{background:var(--t-bg);color:var(--t-txt)}
+.tag-sm{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--surf2);color:var(--txt3);border:1px solid var(--bdr);white-space:nowrap}
+.tag-urg{background:#c0392b;color:#fff;border-color:#c0392b;font-weight:700;font-size:11px;padding:3px 8px;border-radius:6px;animation:pulse-red 2s infinite}
+.tag-ok{background:var(--g-bg);color:var(--g-txt);border-color:#c5e1a5;font-size:11px;padding:3px 8px}
+.tag-warn{background:#e65100;color:#fff;border-color:#e65100;font-weight:700;font-size:11px;padding:3px 8px;border-radius:6px;animation:pulse-yellow 2s infinite}
+@media(prefers-color-scheme:dark){.tag-warn{background:#e65100;color:#fff;border-color:#e65100}}
+.tag-day-ok{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7;font-weight:700}
+.tag-day-warn{background:#fff8e1;color:#e65100;border-color:#ffcc02;font-weight:700}
+.tag-day-danger{background:#fff0f0;color:#c0392b;border-color:#ffcdd2;font-weight:700}
+.tag-manual{background:#f3e5f5;color:#6a1b9a;border-color:#ce93d8;font-weight:700;font-size:9px}
+.downgrade-note{font-size:10px;color:#e65100;background:#fff8e1;border:1px solid #ffcc02;border-radius:4px;padding:2px 7px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+@media(prefers-color-scheme:dark){.downgrade-note{background:#2d2000;color:#ffb300;border-color:#7a5c00}}
+@media(prefers-color-scheme:dark){
+  .tag-day-ok{background:#1b3a1b;color:#81c784;border-color:#2e7d32}
+  .tag-day-warn{background:#2d2000;color:#ffb300;border-color:#7a5c00}
+  .tag-day-danger{background:#2d1010;color:#ff8a80;border-color:#7b2020}
+  .tag-manual{background:#2d1040;color:#ce93d8;border-color:#6a1b9a}
+}
+.row-metric{text-align:right;flex-shrink:0;min-width:80px}
+.row-metric .val{font-size:13px;font-weight:700}.row-metric .lbl{font-size:10px;color:var(--txt3)}
+.row-mini-views{display:flex;gap:3px;justify-content:flex-end;margin-top:3px;flex-wrap:wrap;max-width:140px}
+.mini-vbadge{font-size:9px;font-weight:700;color:var(--g-txt);background:var(--g-bg);padding:1px 6px;border-radius:8px;white-space:nowrap;line-height:1.5}
+@media(prefers-color-scheme:dark){.mini-vbadge{color:var(--g-txt);background:var(--g-bg)}}
+.row-exp-btn{width:24px;height:24px;border-radius:50%;background:var(--surf2);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s;font-size:11px;color:var(--txt3)}
+.ch-row.expanded .row-exp-btn{transform:rotate(180deg)}
+.row-actions{display:flex;gap:5px;flex-shrink:0}
+.row-notif-strip{font-size:11px;font-weight:600;padding:5px 14px;display:flex;align-items:center;gap:6px;border-top:1px solid rgba(0,0,0,0.06)}
+.row-notif-strip.strip-red{background:rgba(192,57,43,0.08);color:#c0392b}
+.row-notif-strip.strip-yellow{background:rgba(255,179,0,0.1);color:#b37700}
+.row-notif-strip.strip-green{background:rgba(46,125,50,0.08);color:#2e7d32}
+@media(prefers-color-scheme:dark){
+  .row-notif-strip.strip-red{background:rgba(255,100,80,0.1);color:#ff8a80}
+  .row-notif-strip.strip-yellow{background:rgba(255,179,0,0.1);color:#ffcc02}
+  .row-notif-strip.strip-green{background:rgba(46,125,50,0.1);color:#81c784}
+}
+.row-detail{display:none;padding:0 14px 14px;border-top:1px solid var(--bdr)}
+.ch-row.expanded .row-detail{display:block}
+.d-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.metric{background:var(--surf2);border-radius:var(--r-sm);padding:9px 12px}
+.metric .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);margin-bottom:4px}
+.metric .val{font-size:17px;font-weight:700}.metric .hint{font-size:10px;color:var(--txt3);margin-top:2px}
+.hint-ok{color:var(--ok)!important}.hint-warn{color:var(--warn)!important}
+.bar-wrap{margin-bottom:10px}
+.bar-row{display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:5px}
+.bar{height:5px;background:var(--surf2);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.fill-1{background:var(--b-bar)}.fill-2{background:var(--g-bar)}.fill-3{background:var(--t-bar)}
+.goal-txt{font-size:11px;color:var(--txt3);margin-bottom:8px}
+.si-box{background:var(--surf2);border-radius:var(--r-sm);padding:8px 12px;font-size:12px;color:var(--txt2);margin-bottom:10px;line-height:1.5}
+.si-box.s1{border-left:3px solid var(--b-bar)}.si-box.s2{border-left:3px solid var(--g-bar)}.si-box.s3{border-left:3px solid var(--t-bar)}
+.urg-banner{background:#fff5f5;border:1px solid #ffcdd2;border-radius:var(--r-sm);padding:8px 12px;font-size:12px;color:var(--danger);display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:600}
+@media(prefers-color-scheme:dark){.urg-banner{background:#2d1010;border-color:#7b2020;color:#ff8a80}}
+.vid-hd{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--txt3);font-weight:700;margin-bottom:6px}
+.vid-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:12px}
+.vid-item:last-child{border-bottom:none}
+.vid-n{font-size:10px;color:var(--txt3);width:14px;flex-shrink:0;font-weight:700}
+.vid-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt2)}
+.vid-title a{color:inherit;text-decoration:none}.vid-title a:hover{color:var(--red)}
+.vid-views{font-weight:700;white-space:nowrap;min-width:64px;text-align:right}
+.vid-date{font-size:10px;color:var(--txt3);white-space:nowrap;min-width:50px;text-align:right}
+.first-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#e3f2fd;color:#0d47a1;font-weight:700}
+.d-foot{display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--bdr);flex-wrap:wrap}
+.foot-lbl{font-size:11px;color:var(--txt3);white-space:nowrap}
+.stage-sel{height:26px;padding:0 8px;font-size:11px;border:1px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--txt);cursor:pointer;font-family:inherit}
+.note-inp{flex:1;min-width:80px;height:26px;padding:0 10px;border:1px solid var(--bdr);border-radius:var(--r-sm);background:var(--surf2);color:var(--txt);font-size:11px;font-family:inherit}
+.note-inp:focus{outline:none;border-color:var(--bdr2)}
+.foot-time{font-size:10px;color:var(--txt3);white-space:nowrap;margin-left:auto}
+.empty{text-align:center;padding:3rem 1rem;color:var(--txt3)}
+.empty .ico{font-size:38px;margin-bottom:10px}
+.empty h3{font-size:14px;color:var(--txt2);margin-bottom:5px;font-weight:500}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:var(--surf);border:1px solid var(--bdr2);border-radius:var(--r);padding:22px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.22)}
+.modal h2{font-size:15px;font-weight:700;margin-bottom:5px}
+.modal .sub{font-size:12px;color:var(--txt2);margin-bottom:18px;line-height:1.5}
+.m-field{margin-bottom:14px}
+.m-field label{display:block;font-size:12px;color:var(--txt2);margin-bottom:5px;font-weight:600}
+.m-field input{width:100%;height:38px;padding:0 12px;border:1px solid var(--bdr2);border-radius:var(--r-sm);background:var(--surf);color:var(--txt);font-size:13px;font-family:inherit}
+.m-field input:focus{outline:none;border-color:var(--red)}
+.m-field .help{font-size:11px;color:var(--txt3);margin-top:4px;line-height:1.5}
+.m-err{font-size:12px;color:var(--danger);margin-top:8px;padding:8px 12px;background:#fff5f5;border-radius:var(--r-sm);border:1px solid #ffcdd2}
+.m-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.fetch-st{margin-top:12px;padding:9px 12px;background:var(--surf2);border-radius:var(--r-sm);font-size:12px;color:var(--txt2);display:none;align-items:center;gap:8px}
+.fetch-st.show{display:flex}
+.sync-st{font-size:11px;padding:3px 0;margin-bottom:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin .8s linear infinite}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.d-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ── Notif Tahap 2 baru ── */
+.s2-notif-wrap{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+@keyframes slideInDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.s2-notif-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(90deg,#e8f5e9 0%,#f1f8e9 100%);border:1px solid #a5d6a7;border-left:4px solid #2e7d32;border-radius:var(--r);animation:slideInDown .3s ease;box-shadow:0 2px 8px rgba(46,125,50,0.12)}
+.s2-notif-av{width:36px;height:36px;border-radius:50%;background:#c8e6c9;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#2e7d32;overflow:hidden;border:2px solid #a5d6a7}
+.s2-notif-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.s2-notif-body{flex:1;min-width:0}
+.s2-notif-title{font-size:13px;font-weight:700;color:#1b5e20;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s2-notif-sub{font-size:11px;color:#388e3c;margin-top:2px}
+.s2-notif-dismiss{flex-shrink:0;padding:4px 12px;font-size:11px;border:1px solid #81c784;border-radius:20px;background:#fff;color:#2e7d32;cursor:pointer;font-weight:600;font-family:inherit;white-space:nowrap;transition:background .15s}
+.s2-notif-dismiss:hover{background:#e8f5e9}
+.s2-notif-hd{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f1f8e9;border:1px solid #c8e6c9;border-radius:var(--r-sm);margin-bottom:4px;font-size:11px;color:#388e3c;font-weight:600}
+.s2-notif-hd span{flex:1}
+@media(prefers-color-scheme:dark){
+  .s2-notif-item{background:linear-gradient(90deg,#1a3a1a 0%,#1e4020 100%);border-color:#388e3c;box-shadow:0 2px 8px rgba(46,125,50,0.2)}
+  .s2-notif-av{background:#1b3a1b;color:#81c784;border-color:#2e7d32}
+  .s2-notif-title{color:#a5d6a7}
+  .s2-notif-sub{color:#66bb6a}
+  .s2-notif-dismiss{background:#1b3a1b;border-color:#2e7d32;color:#81c784}
+  .s2-notif-dismiss:hover{background:#2e5030}
+  .s2-notif-hd{background:#1a3a1a;border-color:#2e7d32;color:#81c784}
+}
+@media(max-width:600px){.s2-notif-item{flex-wrap:wrap}.s2-notif-dismiss{margin-left:46px;margin-top:4px}}
+</style>
+</head>
+<body>
+
+<!-- ── SETUP SCREEN ── -->
+<div class="screen" id="sc-setup" style="display: flex;">
+ <div class="screen-box">
+  <div class="s-logo">
+   <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M21.8 8s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.8 5 12 5 12 5s-4.8 0-7 .1c-.4.1-1.2.1-2 .9-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.5c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.8 2.3.9C6.8 19 12 19 12 19s4.8 0 7-.2c.4-.1 1.2-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.5C22 9.6 21.8 8 21.8 8zM10 15V9l5.5 3-5.5 3z"></path></svg></div>
+   <div><h1>YT Monitor — Setup</h1><p>Cukup sekali, ~10 menit</p></div>
+  </div>
+
+  <!-- Step view -->
+  <div id="setup-step-view">
+   <div style="font-size:13px;font-weight:700;margin-bottom:14px">Ikuti langkah berikut:</div>
+   <div class="step-wrap">
+    <div class="step"><span class="step-n">1</span><div class="step-body">Buka <a href="https://sheets.new" target="_blank"><strong>sheets.new</strong></a> → buat Google Sheet baru (nama bebas, biarkan kosong).</div></div>
+    <div class="step"><span class="step-n">2</span><div class="step-body">Di Google Sheet → klik <strong>Extensions → Apps Script</strong> → hapus semua kode yang ada → paste kode ini:<div class="code-block" id="gas-code">// ═══════════════════════════════════════════════════
+// YT Monitor — Apps Script (Google Drive Storage + Sheets Backup)
+// Data utama disimpan sbg JSON di Drive (cepat utk sinkronisasi web app).
+// Setiap kali disimpan, otomatis JUGA ditulis ulang ke tab Sheet
+// "Backup Database" dlm bentuk kolom yang bisa dibaca manusia langsung.
+// ═══════════════════════════════════════════════════
+var FILE_NAME = "ytmonitor-data.json";
+var BACKUP_SHEET_NAME = "Backup Database";
+
+function getOrCreateFile() {
+  var files = DriveApp.getFilesByName(FILE_NAME);
+  if (files.hasNext()) return files.next();
+  return DriveApp.createFile(FILE_NAME, '{"channels":[],"apiKeys":[]}', MimeType.PLAIN_TEXT);
+}
+
+function doGet(e) {
+  try {
+    var content = getOrCreateFile().getBlob().getDataAsString();
+    return ContentService
+      .createTextOutput(content)
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({error:err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doPost(e) {
+  try {
+    var data = e.postData.contents;
+    var file = getOrCreateFile();
+    file.setContent(data);
+
+    // Tulis juga ke tab Sheet "Backup Database" supaya data tetap bisa
+    // dibaca manusia walau web app/file JSON error. Dibungkus try/catch
+    // sendiri supaya kalau bagian ini gagal, sinkronisasi utama tidak ikut gagal.
+    try {
+      var parsed = JSON.parse(data);
+      writeBackupSheet_(parsed.channels || []);
+    } catch (sheetErr) {
+      Logger.log("Backup sheet gagal ditulis: " + sheetErr.toString());
+    }
+
+    return ContentService.createTextOutput('{"status":"ok"}')
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({error:err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Tulis ulang seluruh tab "Backup Database" berdasarkan state channels saat ini.
+function writeBackupSheet_(channelList) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(BACKUP_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(BACKUP_SHEET_NAME);
+  }
+
+  var headers = ["Channel Name", "URL/ID", "Stage", "Subscribers", "Total Videos", "Last Upload Date", "Average Views"];
+
+  var rows = channelList.map(function(ch) {
+    var videos = ch.videos || [];
+
+    var lastUploadDate = "—";
+    if (videos.length &gt; 0) {
+      var sorted = videos.slice().sort(function(a, b) {
+        return new Date(b.publishedAt) - new Date(a.publishedAt);
+      });
+      if (sorted[0] &amp;&amp; sorted[0].publishedAt) {
+        lastUploadDate = Utilities.formatDate(new Date(sorted[0].publishedAt), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm");
+      }
+    }
+
+    var avgViews = 0;
+    if (videos.length &gt; 0) {
+      var totalViews = videos.reduce(function(sum, v) { return sum + (v.views || 0); }, 0);
+      avgViews = Math.round(totalViews / videos.length);
+    }
+
+    return [
+      ch.name || ch.inputValue || "—",
+      ch.inputValue || ch.ytId || "—",
+      "Tahap " + (ch.stage || 1),
+      ch.subscribers || 0,
+      ch.videoCount || 0,
+      lastUploadDate,
+      avgViews
+    ];
+  });
+
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight("bold").setBackground("#f0f0f0");
+  sheet.setFrozenRows(1);
+  if (rows.length &gt; 0) {
+    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  }
+  sheet.autoResizeColumns(1, headers.length);
+}</div><button class="copy-btn" onclick="copyCode()">Copy</button>Klik 💾 <strong>Save</strong> → klik ▶ <strong>Run</strong> → pilih <em>doGet</em> → izinkan akses Google. Setelah ini, tab baru bernama <strong>"Backup Database"</strong> akan otomatis muncul &amp; terisi tiap kali ada perubahan data.</div></div>
+    <div class="step"><span class="step-n">3</span><div class="step-body">Klik <strong>Deploy → New deployment</strong> → pilih type <strong>Web app</strong> → isi:<br><em>Execute as</em>: <strong>Me</strong> &nbsp;·&nbsp; <em>Who has access</em>: <strong>Anyone</strong> → Deploy → izinkan → copy <strong>Web app URL</strong>.</div></div>
+    <div class="step"><span class="step-n">4</span><div class="step-body">Paste URL + buat PIN tim di form bawah, lalu klik <strong>Cek &amp; Generate File</strong>. Kamu akan download file <code>index.html</code> baru → upload ke GitHub menggantikan file lama.</div></div>
+   </div>
+   <div class="divider"></div>
+   <div class="field">
+    <label>Web App URL (dari Apps Script)</label>
+    <input type="text" id="s-url" placeholder="https://script.google.com/macros/s/.../exec">
+    <div class="help">Dari Deploy → Manage deployments → copy URL-nya</div>
+   </div>
+   <div class="field">
+    <label>PIN tim (4 digit)</label>
+    <input type="password" id="s-pin" placeholder="Bebas, contoh: tim123 atau rahasia2024">
+    <div class="help">Semua anggota tim pakai PIN yang sama untuk masuk</div>
+   </div>
+   <div id="s-err"></div>
+   <button class="btn-full" id="s-btn" onclick="doSetup()" disabled="">Mengecek koneksi...</button>
+  </div>
+
+  <!-- Download view (muncul setelah setup berhasil) -->
+  <div id="setup-dl-view" style="display:none">
+   <div class="dl-box">
+    <h3>✓ Koneksi berhasil!</h3>
+    <p>File <strong>index.html</strong> sudah di-generate dengan konfigurasi tertanam di dalamnya. Sekarang upload ke GitHub:</p>
+    <div class="dl-steps">
+     <div class="dl-step"><span class="n">1</span><span>Klik tombol Download di bawah → simpan sebagai <strong>index.html</strong></span></div>
+     <div class="dl-step"><span class="n">2</span><span>Buka repo GitHub → klik file <strong>index.html</strong> lama → klik ✏️ Edit → hapus semua → paste isi file baru → Commit</span></div>
+     <div class="dl-step"><span class="n">3</span><span>Atau lebih mudah: hapus file lama → Upload file baru langsung</span></div>
+     <div class="dl-step"><span class="n">4</span><span>Selesai! Tim buka link GitHub Pages → langsung masuk layar PIN</span></div>
+    </div>
+    <button class="btn-full" id="dl-btn" onclick="downloadFile()" style="background:#2e7d32;max-width:280px;margin:0 auto">⬇ Download index.html</button>
+   </div>
+  </div>
+
+ </div>
+</div>
+
+<!-- ── PIN SCREEN ── -->
+<div class="screen" id="sc-pin" style="display:none">
+ <div class="screen-box pin-box">
+  <div class="logo-box" style="margin:0 auto 14px"><svg viewBox="0 0 24 24"><path d="M21.8 8s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.8 5 12 5 12 5s-4.8 0-7 .1c-.4.1-1.2.1-2 .9-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.5c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.8 2.3.9C6.8 19 12 19 12 19s4.8 0 7-.2c.4-.1 1.2-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.5C22 9.6 21.8 8 21.8 8zM10 15V9l5.5 3-5.5 3z"></path></svg></div>
+  <div style="font-size:16px;font-weight:700;margin-bottom:4px">YT Monitor</div>
+  <div style="font-size:13px;color:var(--txt2);margin-bottom:20px">Masukkan password tim</div>
+  <input type="password" id="pin-input" placeholder="Password..." autocomplete="off" style="width:100%;height:44px;padding:0 14px;border:1px solid var(--bdr2);border-radius:var(--r-sm);background:var(--surf);color:var(--txt);font-size:15px;font-family:inherit;text-align:center;letter-spacing:2px" onkeydown="if(event.key==='Enter')checkPin()">
+  <div id="pin-err" style="font-size:12px;color:var(--danger);min-height:18px;margin-top:8px"></div>
+  <button class="btn-full" onclick="checkPin()" style="margin-top:4px">Masuk →</button>
+ </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app" style="display:none">
+<div class="wrap">
+<header>
+ <div class="hd-top">
+  <div class="logo">
+   <div class="logo-box" style="width:28px;height:28px;border-radius:7px"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff"><path d="M21.8 8s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.8 5 12 5 12 5s-4.8 0-7 .1c-.4.1-1.2.1-2 .9-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.5c0 1.6.2 3.2.2 3.2s.2 1.4.8 2c.8.8 1.8.8 2.3.9C6.8 19 12 19 12 19s4.8 0 7-.2c.4-.1 1.2-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.5C22 9.6 21.8 8 21.8 8zM10 15V9l5.5 3-5.5 3z"></path></svg></div>
+   <h1>YT Monitor <span>— channel tracker</span></h1>
+  </div>
+  <button class="btn" id="btn-ref-all" onclick="refreshAll()"><span id="ref-ico">↻</span> Refresh Semua</button>
+  <button class="btn btn-red" onclick="openAdd()">+ Tambah Channel</button>
+  <button class="btn" onclick="exportData()">⬇ Export</button>
+  <button class="btn" onclick="document.getElementById('imp').click()">⬆ Import</button>
+  <button class="btn" onclick="doLogout()" title="Kunci layar">🔒</button>
+  <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
+ </div>
+ <div class="api-section">
+  <div class="api-hd"><span>🔑 YouTube API Keys</span><span id="api-sum" style="font-size:11px;color:var(--txt3)"></span><button class="btn btn-sm" onclick="toggleApiPanel()">Kelola ▾</button></div>
+  <div id="api-panel" style="display:none">
+   <div class="api-keys-list" id="api-keys-list"></div>
+   <div class="api-add-row"><input type="password" id="new-key-inp" placeholder="Tambah API key baru (AIzaSy...)"><button class="btn btn-sm btn-red" onclick="addApiKey()">+ Tambah</button></div>
+   <div style="font-size:11px;color:var(--txt3);margin-top:6px">💡 Tambah beberapa key — otomatis pindah ke key berikutnya kalau satu kena limit (403).</div>
+  </div>
+ </div>
+ <div id="sync-st" class="sync-st"></div>
+ <div id="ar-bar" style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;flex-wrap:wrap">
+  <span style="color:var(--txt3)">Auto-refresh YouTube:</span>
+  <button id="ar-toggle" onclick="toggleAutoRefresh()" class="btn btn-sm">...</button>
+  <span style="color:var(--txt3)">Jam:</span>
+  <select id="ar-hour" onchange="setAutoRefreshHour(parseInt(this.value))" class="stage-sel" style="height:26px;font-size:11px">
+   <option value="0">00:00</option>
+   <option value="1">01:00</option>
+   <option value="2">02:00</option>
+   <option value="3">03:00</option>
+   <option value="4">04:00</option>
+   <option value="5">05:00</option>
+   <option value="6">06:00</option>
+   <option value="7">07:00</option>
+   <option value="8">08:00</option>
+   <option value="9">09:00</option>
+   <option value="10">10:00</option>
+   <option value="11">11:00</option>
+   <option value="12">12:00</option>
+   <option value="13">13:00</option>
+   <option value="14">14:00</option>
+   <option value="15">15:00</option>
+   <option value="16">16:00</option>
+   <option value="17">17:00</option>
+   <option value="18">18:00</option>
+   <option value="19">19:00</option>
+   <option value="20">20:00</option>
+   <option value="21">21:00</option>
+   <option value="22">22:00</option>
+   <option value="23">23:00</option>
+  </select>
+  <span id="ar-last" style="color:var(--txt3);font-size:11px"></span>
+  <span style="color:var(--txt3);margin-left:8px">|</span>
+  <span style="color:var(--txt3)">📈 Masuk Tahap 2 saat avg views ≥</span>
+  <input type="number" id="ar-s2thresh" min="1" max="9999" value="100" onchange="setStage2Threshold(parseInt(this.value))" style="width:58px;height:26px;padding:0 6px;border:1px solid var(--bdr2);border-radius:var(--r-sm);background:var(--surf2);color:var(--txt);font-size:12px;font-family:inherit;text-align:center">
+  <span style="color:var(--txt3);margin-left:4px">| ⚡ Warning saat ≥</span>
+  <input type="number" id="ar-thresh" min="1" max="99" value="70" onchange="setWarnThreshold(parseInt(this.value))" style="width:52px;height:26px;padding:0 6px;border:1px solid var(--bdr2);border-radius:var(--r-sm);background:var(--surf2);color:var(--txt);font-size:12px;font-family:inherit;text-align:center">
+ </div>
+</header>
+<div class="stats" id="stats"></div>
+<div id="s2-notif-wrap"></div>
+<div class="filters" id="filters"></div>
+<div id="list"></div>
+</div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-ov" id="modal" style="display:none" onclick="if(event.target===this)closeAdd()">
+ <div class="modal" style="max-width:480px">
+  <h2>Tambah Channel</h2>
+  <p class="sub">Masukkan satu atau banyak URL YouTube — <strong>1 URL per baris</strong> untuk import massal (cocok untuk ratusan channel sekaligus). Tahap &amp; tanggal mulai terdeteksi otomatis dari video pertama.</p>
+  <div class="m-field">
+   <label>URL / Handle / Channel ID (satu per baris)</label>
+   <textarea id="m-url" rows="8" placeholder="https://youtube.com/@channel1
+https://youtube.com/@channel2
+UCxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--bdr2);border-radius:var(--r-sm);background:var(--surf);color:var(--txt);font-size:13px;font-family:inherit;resize:vertical;min-height:140px;line-height:1.6"></textarea>
+   <div class="help">@channelku · UCxxxxxxxx · youtube.com/@channelku — tempel banyak baris sekaligus, akan diproses satu per satu otomatis</div>
+  </div>
+  <div id="add-err"></div>
+  <div id="bulk-progress-wrap" style="display:none;margin-top:8px">
+   <div class="bar"><div class="bar-fill fill-1" id="bulk-progress-bar" style="width:0%"></div></div>
+   <div id="bulk-progress-txt" style="font-size:11px;color:var(--txt2);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+  </div>
+  <div id="bulk-result" style="display:none;margin-top:10px"></div>
+  <div class="m-btns"><button class="btn" onclick="closeAdd()" id="btn-cancel-add">Batal</button><button class="btn btn-red" id="btn-add" onclick="doAdd()">Tambah &amp; Deteksi Otomatis</button></div>
+ </div>
+</div>
+
+<script>
+// ── INIT ──────────────────────────────────────────────────
+let channels = [], apiKeys = [];
+let arSettings = {enabled: true, hour: 6, stage2Threshold: 100, warnThreshold: 70}; // auto-refresh + threshold settings
+let lastYTRefresh = null; // tanggal terakhir refresh YouTube
+let newStage2Alerts = []; // notif channel baru masuk Tahap 2, di-share via Sheets
+let activeKeyIdx = 0, filter = "all";
+let expanded = new Set(), loading = {};
+let generatedHtml = "";
+
+function init() {
+  // Kalau config sudah tertanam di file, langsung ke PIN
+  if (SHEETS_URL && TEAM_PIN) {
+    if (sessionStorage.getItem("ytmon-sess") === "ok") { showApp(); return; }
+    showScreen("pin");
+  } else {
+    showScreen("setup");
+  }
+}
+
+function showScreen(s) {
+  document.getElementById("sc-setup").style.display = s==="setup"?"flex":"none";
+  document.getElementById("sc-pin").style.display   = s==="pin"?"flex":"none";
+  if(s==="pin")setTimeout(()=>{const el=document.getElementById("pin-input");if(el){el.value="";el.focus();}},100);
+  document.getElementById("app").style.display      = "none";
+}
+function showApp() {
+  document.getElementById("sc-setup").style.display = "none";
+  document.getElementById("sc-pin").style.display   = "none";
+  document.getElementById("app").style.display      = "block";
+  sessionStorage.setItem("ytmon-sess","ok");
+  loadFromSheets();
+}
+
+// ── SETUP ─────────────────────────────────────────────────
+function copyCode() {
+  navigator.clipboard.writeText(document.getElementById("gas-code").textContent);
+  const b=document.querySelector(".copy-btn");b.textContent="✓ Copied!";setTimeout(()=>b.textContent="Copy",2000);
+}
+
+async function doSetup() {
+  const url = document.getElementById("s-url").value.trim();
+  const pin = document.getElementById("s-pin").value.trim();
+  if (!url || !url.includes("script.google.com")) { showSErr("URL tidak valid. Harus dari script.google.com"); return; }
+  if (!pin) { showSErr("Password tidak boleh kosong."); return; }
+  const btn = document.getElementById("s-btn");
+  btn.disabled=true; btn.textContent="Mengecek koneksi...";
+  try {
+    const r = await fetch(url+"?t="+Date.now()); const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
+    // Generate HTML baru dengan config tertanam
+    const src = document.documentElement.outerHTML;
+    generatedHtml = src
+      .replace('const SHEETS_URL = "";', `const SHEETS_URL = "${url}";`)
+      .replace('const TEAM_PIN   = "";', `const TEAM_PIN   = "${pin}";`);
+
+    // Tampilkan download view
+    document.getElementById("setup-step-view").style.display = "none";
+    document.getElementById("setup-dl-view").style.display = "block";
+  } catch(e) {
+    showSErr("Gagal: " + e.message + ". Pastikan Web App di-deploy sebagai Anyone.");
+    btn.disabled=false; btn.textContent="Cek Koneksi & Generate File →";
+  }
+}
+
+function showSErr(m){document.getElementById("s-err").innerHTML=`<div class="s-err">⚠ ${m}</div>`;}
+
+function downloadFile() {
+  const blob = new Blob([generatedHtml], {type:"text/html"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "index.html";
+  a.click();
+}
+
+// ── PIN ───────────────────────────────────────────────────
+function checkPin(){
+  const val=document.getElementById("pin-input").value;
+  if(val===TEAM_PIN){
+    document.getElementById("pin-input").value="";
+    document.getElementById("pin-err").textContent="";
+    showApp();
+  } else {
+    document.getElementById("pin-err").textContent="Password salah, coba lagi.";
+    document.getElementById("pin-input").value="";
+    document.getElementById("pin-input").focus();
+  }
+}
+function doLogout(){
+  sessionStorage.removeItem("ytmon-sess");
+  showScreen("pin");
+  setTimeout(()=>{const el=document.getElementById("pin-input");if(el){el.value="";el.focus();}},100);
+}
+
+// ── Google Sheets sync ────────────────────────────────────
+async function loadFromSheets(){
+  // Jangan load dari Sheets kalau sedang ada proses save — hindari overwrite data baru
+  if(_saving||_pendingSave){ setSyncSt("⟳ Sync ditunda (sedang menyimpan)...","#3266ad"); return; }
+  setSyncSt("⟳ Memuat data dari Sheets...","#3266ad");
+  try{
+    const r=await fetch(SHEETS_URL+"?t="+Date.now());const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    channels=d.channels||[];
+    apiKeys=d.apiKeys||[];
+    arSettings=d.arSettings||{enabled:true,hour:6};
+    lastYTRefresh=d.lastYTRefresh||null;
+    newStage2Alerts=d.newStage2Alerts||[];
+    setSyncSt("✓ Dimuat dari Sheets — "+fmtDtT(new Date().toISOString()),"var(--txt2)");
+    render();renderApiKeys();updateApiSum();renderArBar();renderNewAlerts();
+    // Cek apakah perlu auto-refresh YouTube
+    checkAutoRefresh();
+  }catch(e){setSyncSt("⚠ Gagal muat: "+e.message,"var(--danger)");}
+}
+// ── Save queue: cegah race condition rapid-add ─────────────
+let _saveTimer = null;
+let _saving = false;
+let _pendingSave = false;
+
+async function saveToSheets(){
+  // Kalau sedang ada save berjalan, tandai pending dan tunggu
+  if(_saving){ _pendingSave=true; return; }
+  _saving=true; _pendingSave=false;
+  setSyncSt("⟳ Menyimpan...","#3266ad");
+  try{
+    // Pakai Google Drive — tidak ada batas ukuran file, simpan semua data penuh
+    const payload = JSON.stringify({channels,apiKeys,arSettings,lastYTRefresh,newStage2Alerts,updatedAt:new Date().toISOString()});
+    await fetch(SHEETS_URL,{method:"POST",body:payload,headers:{"Content-Type":"text/plain"}});
+    setSyncSt("✓ Tersimpan — "+fmtDtT(new Date().toISOString()),"var(--ok)");
+  }catch(e){setSyncSt("⚠ Gagal simpan: "+e.message,"var(--danger)");}
+  _saving=false;
+  // Kalau ada yang pending, jalankan sekali lagi
+  if(_pendingSave){ _pendingSave=false; saveToSheets(); }
+}
+function setSyncSt(m,c){const el=document.getElementById("sync-st");if(!el)return;el.style.color=c;el.textContent=m;}
+
+// ── API Keys ──────────────────────────────────────────────
+function toggleApiPanel(){const p=document.getElementById("api-panel");p.style.display=p.style.display==="none"?"block":"none";if(p.style.display==="block")renderApiKeys();}
+function addApiKey(){const inp=document.getElementById("new-key-inp");const v=inp.value.trim();if(!v||!v.startsWith("AIza")){alert("Format key tidak valid.");return;}if(apiKeys.find(k=>k.key===v)){alert("Key sudah ada.");return;}apiKeys.push({key:v,label:"Key "+(apiKeys.length+1),status:"idle"});inp.value="";renderApiKeys();updateApiSum();saveToSheets();}
+function removeApiKey(i){if(!confirm("Hapus key ini?"))return;apiKeys.splice(i,1);apiKeys.forEach((k,j)=>{if(k.label.startsWith("Key "))k.label="Key "+(j+1);});if(activeKeyIdx>=apiKeys.length)activeKeyIdx=0;renderApiKeys();updateApiSum();saveToSheets();}
+function renderApiKeys(){const el=document.getElementById("api-keys-list");if(!el)return;if(!apiKeys.length){el.innerHTML=`<div style="font-size:12px;color:var(--txt3);padding:4px 0">Belum ada API key.</div>`;return;}el.innerHTML=apiKeys.map((k,i)=>`<div class="api-key-row"><input type="password" value="${k.key}" readonly style="cursor:default"><span class="key-st ${i===activeKeyIdx?"active":k.status}">${i===activeKeyIdx?"▶ Aktif":k.status==="err"?"⚠ Limit":k.status==="ok"?"✓ OK":"Idle"}</span><button class="btn btn-sm btn-icon" onclick="removeApiKey(${i})">✕</button></div>`).join("");}
+function updateApiSum(){const el=document.getElementById("api-sum");if(!el)return;const ok=apiKeys.filter(k=>k.status!=="err").length;el.textContent=!apiKeys.length?"Belum ada key":`${apiKeys.length} key · ${ok} aktif`;}
+function getActiveKey(){if(!apiKeys.length)return null;for(let i=0;i<apiKeys.length;i++){const idx=(activeKeyIdx+i)%apiKeys.length;if(apiKeys[idx].status!=="err"){activeKeyIdx=idx;return apiKeys[idx].key;}}apiKeys.forEach(k=>k.status="idle");activeKeyIdx=0;saveToSheets();return apiKeys[0]?.key||null;}
+function markKeyErr(key){const k=apiKeys.find(x=>x.key===key);if(k)k.status="err";saveToSheets();renderApiKeys();updateApiSum();activeKeyIdx=(activeKeyIdx+1)%Math.max(apiKeys.length,1);}
+function markKeyOk(key){const k=apiKeys.find(x=>x.key===key);if(k)k.status="ok";}
+
+// ── Helpers ───────────────────────────────────────────────
+function fmt(n){if(n===null||n===undefined||isNaN(n))return"—";n=parseInt(n);if(n>=1e6)return(n/1e6).toFixed(1)+"jt";if(n>=1e3)return(n/1e3).toFixed(1)+"rb";return n.toLocaleString("id-ID");}
+function today(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function localDate(iso){
+  const d=new Date(iso);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function daysIn(d){if(!d)return null;return Math.floor((Date.now()-new Date(d).getTime())/86400000);}
+function avgViews(v){if(!v||!v.length)return null;return Math.round(v.reduce((a,x)=>a+(x.views||0),0)/v.length);}
+function fmtDt(iso){if(!iso)return"—";return new Date(iso).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"});}
+// Untuk tanggal tersimpan sbg YYYY-MM-DD (hindari UTC midnight parsing)
+function fmtDtFromLocal(str){
+  if(!str)return"—";
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str)){const p=str.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"});}
+  return fmtDt(str);
+}
+function fmtDtS(iso){if(!iso)return"—";return new Date(iso).toLocaleDateString("id-ID",{day:"numeric",month:"short"});}
+function fmtDtT(iso){if(!iso)return"—";return new Date(iso).toLocaleDateString("id-ID",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});}
+function inits(n){if(!n)return"?";return n.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();}
+function parseInput(raw){raw=raw.trim();if(/^UC[\w-]{20,}$/.test(raw))return{type:"id",value:raw};const hm=raw.match(/@([\w.-]+)/);if(hm)return{type:"handle",value:"@"+hm[1]};const cm=raw.match(/channel\/(UC[\w-]+)/);if(cm)return{type:"id",value:cm[1]};return{type:"handle",value:raw.startsWith("@")?raw:"@"+raw};}
+
+// ── Stage ─────────────────────────────────────────────────
+function detectStage(d){
+  if(d.subscribers>=500)return 3;
+  const a=avgViews(d.videos);
+  const thresh=arSettings.stage2Threshold||100;
+  if(a!==null&&a>=thresh)return 2;
+  return 1;
+}
+
+// Hari ke-X: dihitung dari tanggal video pertama rilis
+// Hari ke-1 = hari pertama video rilis, Hari ke-0 = belum ada video
+function dayFromFirst(ch){
+  // Selalu hitung dari videos langsung (timestamp penuh) bukan dari stored date (bisa salah UTC)
+  const fvRaw=ch.videos&&ch.videos.length?firstVid(ch):null;
+  const fvStr=fvRaw?localDate(fvRaw):(ch.firstVideoDate||null);
+  if(!fvStr)return 0;
+  const p=fvStr.split('-').map(Number);
+  const fvLocal=new Date(p[0],p[1]-1,p[2]);
+  const t=today().split('-').map(Number);
+  const todayLocal=new Date(t[0],t[1]-1,t[2]);
+  return Math.floor((todayLocal-fvLocal)/86400000)+1;
+}
+
+// Tahap 2: info 30 hari dihitung dari video pertama
+function stage2Info(ch){
+  const fvRaw = ch.videos?.length ? firstVid(ch) : null;
+  const fvStr = fvRaw ? localDate(fvRaw) : ch.firstVideoDate;
+  if(!fvStr) return{elapsed:0,remaining:30,pct:0};
+  const p=fvStr.split('-').map(Number);
+  const fvLocal=new Date(p[0],p[1]-1,p[2]);
+  const t=today().split('-').map(Number);
+  const todayLocal=new Date(t[0],t[1]-1,t[2]);
+  const elapsed=Math.floor((todayLocal-fvLocal)/86400000)+1;
+  const remaining=Math.max(0,30-(elapsed-1));
+  const pct=Math.min(100,((elapsed-1)/30)*100);
+  return{elapsed,remaining,pct};
+}
+
+// Urgent Tahap 2: kalau tanggal upload terakhir bukan HARI INI
+function isUrgent(ch){
+  if(ch.stage!==2)return false;
+  if(!ch.videos?.length)return true;
+  const lu=lastUpload(ch);
+  if(!lu)return true;
+  return localDate(lu)!==today(); // bandingkan tanggal lokal, bukan UTC
+}
+
+function isNearStage2(ch){
+  if(ch.stage!==1)return false;
+  const avg=avgViews(ch.videos);
+  if(avg===null)return false;
+  const s2=arSettings.stage2Threshold||100;
+  const warn=Math.min(arSettings.warnThreshold||70, s2-1);
+  return avg>=warn && avg<s2;
+}
+function setStage2Threshold(v){
+  if(isNaN(v)||v<1)return;
+  arSettings.stage2Threshold=v;
+  // Pastikan warnThreshold selalu di bawah stage2Threshold
+  if(arSettings.warnThreshold>=v) arSettings.warnThreshold=Math.max(1,v-10);
+  saveToSheets();renderArBar();render();
+}
+function setWarnThreshold(v){
+  if(isNaN(v)||v<1)return;
+  arSettings.warnThreshold=Math.min(99,v);
+  saveToSheets();renderArBar();render();
+}
+function isStage1Late(ch){
+  if(ch.stage!==1)return false;
+  const day=dayFromFirst(ch);
+  if(day===0)return false; // belum ada video sama sekali, belum mulai
+  return day>(ch.videoCount||0); // hari berjalan lebih banyak dari video = ada hari kosong
+}
+function lastUpload(ch){if(!ch.videos?.length)return null;return[...ch.videos].sort((a,b)=>new Date(b.publishedAt)-new Date(a.publishedAt))[0].publishedAt;}
+function firstVid(ch){if(!ch.videos?.length)return null;return[...ch.videos].sort((a,b)=>new Date(a.publishedAt)-new Date(b.publishedAt))[0].publishedAt;}
+
+// ── YouTube API ───────────────────────────────────────────
+async function apiFetch(url,retried=false){
+  const key=getActiveKey();if(!key)throw new Error("Tidak ada API key.");
+  const r=await fetch(url+(url.includes("?")?"&":"?")+"key="+key);const d=await r.json();
+  if(d.error){if((d.error.code===403||d.error.code===429)&&!retried){markKeyErr(key);const nk=getActiveKey();if(nk&&nk!==key)return apiFetch(url,true);}throw new Error(d.error.message);}
+  markKeyOk(key);return d;
+}
+async function resolveHandle(h){const d=await apiFetch(`https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(h)}`);if(!d.items?.length)throw new Error("Channel tidak ditemukan: "+h);return d.items[0].id;}
+// ── Fetch channel + video data — HEMAT QUOTA ──────────────
+// Lama: channels(1) + search.list(100) + videos(1) = 102 unit/channel, dan search.list
+// kena delay indexing YouTube (video baru bisa telat muncul beberapa jam/hari).
+// Baru: channels(1, sekalian ambil ID playlist "Uploads") + playlistItems(1) + videos(1)
+// = 3 unit/channel, dan playlistItems selalu real-time (langsung update saat upload).
+async function fetchYT(ytId){
+  // STEP 1 (1 unit): info channel + cari ID playlist "Uploads" bawaan channel
+  const d1=await apiFetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&id=${ytId}`);
+  if(!d1.items?.length)throw new Error("Channel tidak ditemukan");
+  const item=d1.items[0];
+  const uploadsPlaylistId=item.contentDetails?.relatedPlaylists?.uploads||null;
+  let videos=[];
+  if(uploadsPlaylistId){
+    // STEP 2 (1 unit): ambil 50 video terbaru langsung dari playlist Uploads (bukan search.list)
+    const d2=await apiFetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=50`);
+    if(d2.items?.length){
+      const ids=d2.items.map(v=>v.contentDetails?.videoId).filter(Boolean).join(",");
+      if(ids){
+        // STEP 3 (1 unit): ambil statistik (views/likes) untuk video-video tsb
+        const d3=await apiFetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${ids}`);
+        videos=d2.items.filter(v=>v.contentDetails?.videoId).map(v=>{
+          const vid=v.contentDetails.videoId;
+          const st=d3.items?.find(x=>x.id===vid);
+          // videoPublishedAt = waktu video sebenarnya rilis (lebih akurat drpd snippet.publishedAt
+          // yang kadang = waktu masuk playlist)
+          return{id:vid,title:v.snippet?.title||"(tanpa judul)",publishedAt:v.contentDetails?.videoPublishedAt||v.snippet?.publishedAt,views:parseInt(st?.statistics?.viewCount||0),likes:parseInt(st?.statistics?.likeCount||0)};
+        });
+      }
+    }
+  }
+  return{ytId:item.id,name:item.snippet.title,thumbnail:item.snippet.thumbnails?.default?.url||null,subscribers:parseInt(item.statistics.subscriberCount||0),totalViews:parseInt(item.statistics.viewCount||0),videoCount:parseInt(item.statistics.videoCount||0),videos,lastFetched:new Date().toISOString()};
+}
+
+// ── Add Channel (mendukung bulk import banyak URL sekaligus) ─
+function openAdd(){
+  document.getElementById("m-url").value="";
+  document.getElementById("add-err").innerHTML="";
+  document.getElementById("bulk-progress-wrap").style.display="none";
+  document.getElementById("bulk-result").style.display="none";
+  document.getElementById("btn-add").disabled=false;
+  document.getElementById("btn-add").textContent="Tambah & Deteksi Otomatis";
+  document.getElementById("btn-cancel-add").disabled=false;
+  document.getElementById("modal").style.display="flex";
+  setTimeout(()=>document.getElementById("m-url").focus(),50);
+}
+function closeAdd(){
+  document.getElementById("btn-add").disabled=false;
+  document.getElementById("btn-cancel-add").disabled=false;
+  document.getElementById("bulk-progress-wrap").style.display="none";
+  document.getElementById("bulk-result").style.display="none";
+  document.getElementById("modal").style.display="none";
+}
+async function doAdd(){
+  const raw=document.getElementById("m-url").value.trim();
+  if(!raw){showAddErr("Masukkan minimal 1 URL channel.");return;}
+  if(!apiKeys.length){showAddErr("Tambah YouTube API Key dulu di panel atas.");return;}
+  const lines=[...new Set(raw.split("\n").map(l=>l.trim()).filter(Boolean))]; // dedupe baris yang sama persis
+  const total=lines.length;
+
+  document.getElementById("add-err").innerHTML="";
+  document.getElementById("bulk-result").style.display="none";
+  document.getElementById("btn-add").disabled=true;
+  document.getElementById("btn-cancel-add").disabled=true;
+  const progWrap=document.getElementById("bulk-progress-wrap");
+  const progBar=document.getElementById("bulk-progress-bar");
+  const progTxt=document.getElementById("bulk-progress-txt");
+  progWrap.style.display="block";
+
+  let successCount=0, failList=[], lastAddedId=null;
+  for(let i=0;i<total;i++){
+    const line=lines[i];
+    const pct=Math.round((i/total)*100);
+    progBar.style.width=pct+"%";
+    progTxt.textContent=`Memproses ${i+1} dari ${total}: ${line.slice(0,46)}${line.length>46?"…":""}`;
+    try{
+      const p=parseInput(line);
+      let ytId;
+      if(p.type==="id")ytId=p.value; else ytId=await resolveHandle(p.value);
+      if(channels.find(c=>c.ytId===ytId)){
+        failList.push({line,reason:"Sudah ada di daftar"});
+        continue;
+      }
+      const data=await fetchYT(ytId);
+      const stage=detectStage(data);
+      const fv=firstVid({videos:data.videos});
+      let sd=fv?localDate(fv):today();
+      if(stage===2&&data.videos.length>=6){const sv=[...data.videos].sort((a,b)=>new Date(a.publishedAt)-new Date(b.publishedAt));sd=localDate(sv[5].publishedAt);}
+      else if(stage===3)sd=today();
+      const newCh={id:Date.now().toString()+"_"+i,inputValue:line,ytId,stage,stageDate:sd,firstVideoDate:fv?localDate(fv):null,notes:"",addedAt:new Date().toISOString(),...data};
+      channels.push(newCh);
+      lastAddedId=newCh.id;
+      successCount++;
+      // Simpan progres tiap 10 channel — biar tidak hilang kalau koneksi putus di tengah import besar
+      if(successCount%10===0){ render(); await saveToSheets(); }
+    }catch(e){
+      failList.push({line,reason:e.message||"Gagal tidak diketahui"});
+    }
+    // Jeda kecil antar request — mencegah rate-limit YouTube API saat import ratusan channel
+    if(i<total-1) await new Promise(r=>setTimeout(r,150));
+  }
+
+  progBar.style.width="100%";
+  progTxt.textContent=`Selesai: ${successCount} berhasil, ${failList.length} gagal dari ${total} total.`;
+  await saveToSheets();
+  render();
+  document.getElementById("btn-cancel-add").disabled=false;
+  document.getElementById("btn-add").disabled=false;
+
+  if(total===1&&successCount===1){
+    // Tambah 1 channel saja — langsung tutup modal & expand seperti sebelumnya
+    closeAdd();
+    expanded.add(lastAddedId);
+    render();
+    return;
+  }
+
+  // Tampilkan ringkasan hasil import massal
+  const resEl=document.getElementById("bulk-result");
+  resEl.style.display="block";
+  let html=`<div style="font-size:12px;padding:9px 12px;background:var(--g-bg);color:var(--g-txt);border-radius:var(--r-sm);margin-bottom:6px;font-weight:600">✓ ${successCount} dari ${total} channel berhasil ditambahkan.</div>`;
+  if(failList.length){
+    html+=`<div style="font-size:11px;color:var(--danger);max-height:140px;overflow-y:auto;border:1px solid #ffcdd2;border-radius:var(--r-sm);padding:8px 10px;line-height:1.6">⚠ ${failList.length} baris gagal (sudah diisi ulang di kotak teks di atas, bisa diedit & klik Tambah Lagi untuk coba ulang):<br>`+
+      failList.map(f=>`• ${(f.line||"").slice(0,50)} — ${f.reason}`).join("<br>")+
+      `</div>`;
+  }
+  resEl.innerHTML=html;
+  document.getElementById("btn-add").textContent="Tambah Lagi";
+  document.getElementById("m-url").value=failList.length?failList.map(f=>f.line).join("\n"):"";
+}
+function showAddErr(m){document.getElementById("add-err").innerHTML=`<div class="m-err">⚠ ${m}</div>`;document.getElementById("btn-add").disabled=false;document.getElementById("btn-cancel-add").disabled=false;}
+
+// ── Refresh ───────────────────────────────────────────────
+async function refreshOne(id,skipSave=false){
+  if(!apiKeys.length)return;const ch=channels.find(c=>c.id===id);if(!ch)return;
+  loading[id]=true;render();
+  try{const data=await fetchYT(ch.ytId);
+    let ns=ch.stageOverride?ch.stage:detectStage(data);
+    let downgradeNote=ch.downgradeNote||null;
+    // Jangan boleh turun tahap secara otomatis
+    if(!ch.stageOverride&&ns<ch.stage){
+      const avg=avgViews(data.videos);
+      const thresh=arSettings.stage2Threshold||100;
+      if(ch.stage===2&&ns===1)downgradeNote=`Avg views turun ke ${avg||0} (di bawah threshold ${thresh})`;
+      else if(ch.stage===3&&ns<=2)downgradeNote=`Subscriber turun ke ${data.subscribers||0} (di bawah 500)`;
+      ns=ch.stage; // pertahankan tahap saat ini
+    } else if(ns>=ch.stage){
+      downgradeNote=null; // naik tahap, hapus catatan lama
+    }
+    let sd=ch.stageDate;if(ns!==ch.stage)sd=today();
+    const nfv=firstVid({videos:data.videos});const nfd=nfv?localDate(nfv):ch.firstVideoDate;
+    // Deteksi transisi Tahap 1 → Tahap 2 → buat notif (shared ke semua tim via Sheets)
+    if(ch.stage===1&&ns===2){
+      const alreadyAlert=newStage2Alerts.some(a=>a.channelId===ch.id&&!a.dismissed);
+      if(!alreadyAlert){
+        // Hapus alert lama yang sudah dismissed untuk channel ini (bersihkan history)
+        newStage2Alerts=newStage2Alerts.filter(a=>a.channelId!==ch.id);
+        newStage2Alerts.push({
+          id:'a'+Date.now()+'_'+ch.id.slice(-6),
+          channelId:ch.id,
+          channelName:data.name||ch.name||ch.inputValue||"—",
+          thumbnail:data.thumbnail||ch.thumbnail||null,
+          timestamp:new Date().toISOString()
+        });
+      }
+    }
+    channels=channels.map(c=>c.id===id?{...c,...data,stage:ns,stageDate:sd,firstVideoDate:nfd,stageOverride:ch.stageOverride,downgradeNote}:c);
+    if(!skipSave)await saveToSheets();}
+  catch(e){alert("Gagal refresh:\n"+e.message);}
+  loading[id]=false;render();
+}
+async function refreshAll(auto=false){
+  if(!apiKeys.length){if(!auto)alert("Tambah API Key dulu.");return;}
+  const btn=document.getElementById("btn-ref-all"),ico=document.getElementById("ref-ico");
+  btn.disabled=true;ico.className="spin";
+  const total=channels.length;
+  for(let i=0;i<channels.length;i++){
+    const ch=channels[i];
+    const pct=Math.round((i/total)*100);
+    const bar="█".repeat(Math.round(pct/10))+"░".repeat(10-Math.round(pct/10));
+    setSyncSt(`⟳ Refresh ${i+1}/${total} · ${pct}% [${bar}] — ${ch.name||ch.inputValue}...`,"#3266ad");
+    await refreshOne(ch.id, true);
+  }
+  lastYTRefresh=today();
+  await saveToSheets();
+  ico.className="";btn.disabled=false;
+  setSyncSt("✓ Semua "+total+" channel di-refresh — "+fmtDtT(new Date().toISOString()),"var(--ok)");
+  renderArBar();
+}
+function changeStage(id,s){channels=channels.map(c=>c.id===id?{...c,stage:parseInt(s),stageDate:today(),stageOverride:true}:c);saveToSheets();render();}
+function resetStageOverride(id){channels=channels.map(c=>c.id===id?{...c,stageOverride:false}:c);saveToSheets();render();}
+function updateNote(id,v){channels=channels.map(c=>c.id===id?{...c,notes:v}:c);saveToSheets();}
+function removeChannel(id){if(!confirm("Hapus channel ini?"))return;channels=channels.filter(c=>c.id!==id);expanded.delete(id);saveToSheets();render();}
+function toggleExpand(id){expanded.has(id)?expanded.delete(id):expanded.add(id);render();}
+function exportData(){const b=new Blob([JSON.stringify({channels,exportedAt:new Date().toISOString()},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="yt-monitor-"+today()+".json";a.click();}
+function importData(evt){const file=evt.target.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.channels){channels=d.channels;saveToSheets();render();alert("Import berhasil! "+channels.length+" channel.");}else alert("Format tidak dikenali.");}catch(e){alert("File tidak valid.");}evt.target.value="";};r.readAsText(file);}
+
+// ── Auto-refresh logic ───────────────────────────────────
+function checkAutoRefresh(){
+  if(!arSettings.enabled)return;
+  if(!apiKeys.length)return;
+  if(!channels.length)return;
+  const nowHour=new Date().getHours();
+  // Auto-refresh kalau: belum refresh hari ini DAN jam sekarang >= jam setting
+  if(lastYTRefresh!==today()&&nowHour>=arSettings.hour){
+    setSyncSt("⟳ Belum refresh hari ini — auto-refresh dimulai...","#e65100");
+    setTimeout(()=>refreshAll(true),1500); // delay sedikit biar user lihat notifnya
+  } else if(lastYTRefresh===today()){
+    setSyncSt("✓ YouTube sudah di-refresh hari ini — "+fmtDtT(new Date(lastYTRefresh).toISOString()),"var(--ok)");
+  } else {
+    // Belum waktunya (jam belum sampai setting)
+    setSyncSt(`ℹ Data dari Sheets. Auto-refresh akan jalan saat jam ${String(arSettings.hour).padStart(2,'0')}:00`,"var(--txt3)");
+  }
+}
+
+function toggleAutoRefresh(){
+  arSettings.enabled=!arSettings.enabled;
+  saveToSheets();renderArBar();
+  if(arSettings.enabled)checkAutoRefresh();
+}
+
+function setAutoRefreshHour(h){
+  arSettings.hour=h;
+  saveToSheets();renderArBar();
+}
+
+function renderArBar(){
+  const toggle=document.getElementById("ar-toggle");
+  const hourSel=document.getElementById("ar-hour");
+  const lastEl=document.getElementById("ar-last");
+  if(!toggle||!hourSel||!lastEl)return;
+  toggle.textContent=arSettings.enabled?"🟢 ON":"⭕ OFF";
+  const s2inp=document.getElementById("ar-s2thresh");
+  if(s2inp)s2inp.value=arSettings.stage2Threshold||100;
+  const thresh=document.getElementById("ar-thresh");
+  if(thresh)thresh.value=arSettings.warnThreshold||70;
+  toggle.style.color=arSettings.enabled?"var(--ok)":"var(--txt3)";
+  hourSel.value=arSettings.hour;
+  hourSel.disabled=!arSettings.enabled;
+  lastEl.textContent=lastYTRefresh
+    ?(lastYTRefresh===today()?"✓ Sudah refresh hari ini":"Terakhir refresh: "+fmtDtS(lastYTRefresh))
+    :"Belum pernah refresh otomatis";
+  lastEl.style.color=lastYTRefresh===today()?"var(--ok)":"var(--txt3)";
+}
+
+// ── Notif Tahap 2 baru ───────────────────────────────────
+function renderNewAlerts(){
+  const el=document.getElementById("s2-notif-wrap");
+  if(!el)return;
+  const active=newStage2Alerts.filter(a=>!a.dismissed);
+  if(!active.length){el.innerHTML="";return;}
+  const av=n=>n?n.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase():"?";
+  el.innerHTML=`<div class="s2-notif-wrap"><div class="s2-notif-hd"><span>🚀 ${active.length} channel baru masuk Tahap 2 — klik "Tandai Dibaca" untuk hapus notif (berlaku untuk semua tim)</span></div>${active.map(a=>`<div class="s2-notif-item" id="s2n-${a.id}"><div class="s2-notif-av">${a.thumbnail?`<img src="${a.thumbnail}" alt="">`:av(a.channelName)}</div><div class="s2-notif-body"><div class="s2-notif-title">🎉 ${a.channelName} masuk <strong>Tahap 2</strong>!</div><div class="s2-notif-sub">Avg views sudah memenuhi syarat · ${fmtDtT(a.timestamp)}</div></div><button class="s2-notif-dismiss" onclick="dismissAlert('${a.id}')">✓ Tandai Dibaca</button></div>`).join("")}</div>`;
+}
+function dismissAlert(alertId){
+  newStage2Alerts=newStage2Alerts.map(a=>a.id===alertId?{...a,dismissed:true}:a);
+  renderNewAlerts();
+  saveToSheets();
+}
+
+// ── Render ────────────────────────────────────────────────
+const cnt=s=>channels.filter(c=>c.stage===s).length;
+function renderRow(ch){
+  const avg=avgViews(ch.videos),urgent=isUrgent(ch),s1late=isStage1Late(ch),near2=isNearStage2(ch),exp=expanded.has(ch.id),ini=inits(ch.name);
+  const ytUrl=`https://youtube.com/channel/${ch.ytId}`;
+  let rmVal="—",rmLbl="",rmMini="";
+  if(ch.stage===1){rmVal=fmt(avg);rmLbl="avg views";}
+  else if(ch.stage===2){
+    rmVal=fmt(ch.subscribers);rmLbl="subscriber";
+    if(ch.videos?.length){
+      const recent3=[...ch.videos].sort((a,b)=>new Date(b.publishedAt)-new Date(a.publishedAt)).slice(0,3);
+      rmMini=`<div class="row-mini-views" title="Views 3 video terakhir (terbaru → terlama)">${recent3.map(v=>`<span class="mini-vbadge">${fmt(v.views)}</span>`).join('')}</div>`;
+    }
+  }
+  else{rmVal="✓ Siap";rmLbl="transfer";}
+  let stTag="";
+  if(ch.stage===1&&s1late){
+    const missing=dayFromFirst(ch)-(ch.videoCount||0);
+    stTag=`<span class="tag-sm tag-urg">⚠ Telat ${missing} video</span>`;
+  } else if(ch.stage===1&&near2){
+    stTag=`<span class="tag-sm tag-warn">⚡ Siap Tahap 2 (avg ${avg}/${arSettings.stage2Threshold||100})</span>`;
+  } else if(ch.stage===2){
+    if(urgent)stTag=`<span class="tag-sm tag-urg">⚠ Belum upload hari ini</span>`;
+    else stTag=`<span class="tag-sm tag-ok">✓ Upload hari ini</span>`;
+  }
+  const dayNum=dayFromFirst(ch);
+  // Warna day badge untuk Tahap 1
+  let dayBadgeClass="tag-sm";
+  if(ch.stage===1&&dayNum>0){
+    const videosDone=ch.videoCount||0;
+    if(dayNum>=6&&videosDone>=6)dayBadgeClass="tag-sm tag-day-ok";       // ✓ Selesai
+    else if(dayNum>=6)dayBadgeClass="tag-sm tag-day-danger";              // ⚠ Telat
+    else if(dayNum>=4)dayBadgeClass="tag-sm tag-day-warn";               // ⚡ Mendekati
+  }
+  const manualBadge=ch.stageOverride?`<span class="tag-sm tag-manual">✎ Manual</span>`:"";
+  const downgradeBadge=ch.downgradeNote?`<span class="downgrade-note" title="${ch.downgradeNote}">⚠ ${ch.downgradeNote}</span>`:"";
+  const s2info=ch.stage===2?stage2Info(ch):null;
+  let detail="";
+  if(exp){
+    let pct=0,pLbl="",pGoal="";
+    if(ch.stage===1){
+      const v=Math.min(ch.videoCount||0,6);pct=(v/6)*100;
+      pLbl=`${v} dari 6 video · Hari ke-${dayNum}`;
+      const onTrack1=dayNum<=(ch.videoCount||0)||dayNum===0;
+      const s2t=arSettings.stage2Threshold||100;
+      pGoal=avg!==null&&avg>=s2t
+        ?`✓ Avg views ≥${s2t} — akan naik Tahap 2 saat Refresh`
+        :`Syarat naik Tahap 2: avg views ≥${s2t} (sekarang: ${avg!==null?avg:0})`
+        +(s1late?` · ⚠ Hari ke-${dayNum} tapi baru ${ch.videoCount||0} video`:"");
+    } else if(ch.stage===2){
+      const s=ch.subscribers||0;pct=Math.min(100,(s/500)*100);
+      pLbl=`${fmt(s)} / 500 subscriber`;
+      pGoal=`Hari ke-${s2info.elapsed} dari 30 · Sisa ${s2info.remaining} hari lagi`;
+    } else{pct=100;pLbl="Siap dipindah ke email pengelola";}
+    const si={
+      1:(()=>{
+        const fvRaw=ch.videos?.length?firstVid(ch):null;
+        const fvDisp=fvRaw?localDate(fvRaw):ch.firstVideoDate;
+        return `Kriteria Tahap 2: avg views ≥${arSettings.stage2Threshold||100}. Sekarang: ${avg!==null?avg+" views":"belum ada data"}. Video pertama rilis: ${fmtDtFromLocal(fvDisp)}`;
+      })(),
+      2:(()=>{
+        const fvRaw=ch.videos?.length?firstVid(ch):null;
+        const fvStr=fvRaw?localDate(fvRaw):ch.firstVideoDate;
+        let dl="—";
+        if(fvStr){
+          const p=fvStr.split('-').map(Number);
+          dl=fmtDtFromLocal(new Date(p[0],p[1]-1,p[2]+30).toISOString());
+        }
+        return `Deadline 500 sub: ${dl} (30 hari dari video pertama). Upload rutin tiap hari — terakhir: ${fmtDt(lastUpload(ch))}`;
+      })(),
+      3:`≥500 subscriber. Siap transfer ke email pengelola.`
+    };
+    const luDate=lastUpload(ch);
+    const missing1=s1late?dayFromFirst(ch)-(ch.videoCount||0):0;
+    const near2banner=near2?`<div class="urg-banner" style="background:#fff8e1;border-color:#ffcc02;color:#e65100">⚡ Avg views sudah ${avg} — hampir Tahap 2! Siapkan konten 30 hari ke depan sekarang.</div>`:"";
+    const ub=urgent
+      ?`<div class="urg-banner">⚠ Belum ada upload hari ini! Terakhir upload: ${luDate?fmtDtS(luDate):"belum pernah"}</div>`
+      :s1late
+      ?`<div class="urg-banner">⚠ Ketinggalan ${missing1} video! Hari ke-${dayFromFirst(ch)} tapi baru ${ch.videoCount||0} video — harus segera upload ${missing1} video lagi.</div>`
+      :near2banner
+;
+    let vh="";if(ch.stage===1&&ch.videos?.length){const sv=[...ch.videos].sort((a,b)=>new Date(a.publishedAt)-new Date(b.publishedAt));vh=`<div class="vid-hd" style="margin-top:10px">Video rilis</div>`+sv.slice(0,6).map((v,i)=>`<div class="vid-item"><span class="vid-n">${i+1}</span><span class="vid-title"><a href="https://youtu.be/${v.id}" target="_blank">${v.title}</a>${i===0?'<span class="first-badge" style="margin-left:4px">PERTAMA</span>':""}</span><span class="vid-views" style="color:${v.views>=100?"var(--ok)":v.views>=50?"var(--warn)":"var(--txt2)"}">${fmt(v.views)}</span><span class="vid-date">${fmtDtS(v.publishedAt)}</span></div>`).join("");}
+    detail=`<div class="row-detail">${ub}<div class="d-grid"><div class="metric"><div class="lbl">Subscriber</div><div class="val">${fmt(ch.subscribers)}</div>${ch.stage===2&&ch.subscribers?`<div class="hint">${Math.round((ch.subscribers/500)*100)}% dari 500</div>`:""}</div><div class="metric"><div class="lbl">Total Video</div><div class="val">${fmt(ch.videoCount)}</div>${ch.stage===1?`<div class="hint">${Math.min(ch.videoCount||0,6)}/6</div>`:""}${ch.stage===2?`<div class="hint ${urgent?"hint-warn":""}">${urgent?"⚠ Perlu upload":"Upload rutin"}</div>`:""}</div><div class="metric"><div class="lbl">${ch.stage===2?"Upload Terakhir":"Avg Views"}</div><div class="val" style="font-size:${ch.stage===2?"13px":"17px"};padding-top:${ch.stage===2?"3px":"0"}">${ch.stage===2?(lastUpload(ch)?fmtDtS(lastUpload(ch)):"—"):fmt(avg)}</div>${ch.stage===1&&avg!==null?`<div class="hint ${avg>=(arSettings.stage2Threshold||100)?"hint-ok":avg>=(arSettings.warnThreshold||70)?"hint-warn":""}">${avg>=(arSettings.stage2Threshold||100)?"✓ Layak Tahap 2":avg>=(arSettings.warnThreshold||70)?"⚡ Mendekati":"masih rendah"}</div>`:""}${ch.stage===2?`<div class="hint ${urgent?"hint-warn":"hint-ok"}">${urgent?"Belum hari ini":"✓ Hari ini"}</div>`:""}</div></div><div class="bar-wrap"><div class="bar-row"><span>${pLbl}</span><span style="font-weight:700">${Math.round(pct)}%</span></div><div class="bar"><div class="bar-fill fill-${ch.stage}" style="width:${pct}%"></div></div><div class="goal-txt">${pGoal}</div>${vh}</div><div class="si-box s${ch.stage}">${si[ch.stage]}</div><div class="d-foot"><span class="foot-lbl">Pindah tahap:</span><select class="stage-sel" onchange="changeStage('${ch.id}',this.value)"><option value="1" ${ch.stage===1?"selected":""}>Tahap 1</option><option value="2" ${ch.stage===2?"selected":""}>Tahap 2</option><option value="3" ${ch.stage===3?"selected":""}>Tahap 3</option></select>${ch.stageOverride?`<button class="btn btn-sm" onclick="resetStageOverride('${ch.id}')" style="color:#6a1b9a;border-color:#ce93d8;font-size:10px" title="Klik agar tahap kembali ditentukan otomatis saat refresh">↺ Reset ke auto</button>`:""}<input class="note-inp" placeholder="Catatan..." value="${(ch.notes||"").replace(/"/g,"&quot;")}" onchange="updateNote('${ch.id}',this.value)"><span class="foot-time">${ch.lastFetched?"Update: "+fmtDtT(ch.lastFetched):"Belum di-refresh"}</span></div></div>`;
+  }
+  // Notif strip — selalu tampil walau row tidak di-expand
+  let notifStrip="";
+  if(urgent){
+    const lu=lastUpload(ch);
+    notifStrip=`<div class="row-notif-strip strip-red">🔴 Belum upload hari ini${lu?" · Terakhir: "+fmtDtS(lu):""} — segera upload!</div>`;
+  } else if(s1late){
+    const missing=dayFromFirst(ch)-(ch.videoCount||0);
+    notifStrip=`<div class="row-notif-strip strip-red">🔴 Ketinggalan ${missing} video · Hari ke-${dayFromFirst(ch)}, baru ${ch.videoCount||0} video — harus catch up!</div>`;
+  } else if(near2){
+    notifStrip=`<div class="row-notif-strip strip-yellow">⚡ Avg views ${avg} — hampir Tahap 2! Siapkan konten 30 hari ke depan sekarang.</div>`;
+  } else if(ch.stage===3){
+    notifStrip=`<div class="row-notif-strip strip-green">✅ Siap pindah ke email pengelola — subscriber sudah ≥500</div>`;
+  } else if(ch.stage===1&&dayNum>=6&&(ch.videoCount||0)>=6&&avg!==null&&avg>=(arSettings.warnThreshold||70)){
+    notifStrip=`<div class="row-notif-strip strip-yellow">⚡ Avg views ${avg} — mendekati syarat Tahap 2</div>`;
+  }
+  return `<div class="ch-row${urgent||s1late?" urgent":near2?" near2":""}${exp?" expanded":""}" id="row-${ch.id}"><div class="row-head" onclick="toggleExpand('${ch.id}')"><div class="row-av">${ch.thumbnail?`<img src="${ch.thumbnail}" alt="">`:ini}</div><span class="row-name">${ch.name||ch.inputValue}</span><div class="row-badges"><span class="badge badge-${ch.stage}">Tahap ${ch.stage}</span><span class="${dayBadgeClass}">${ch.stage===1&&dayNum>=6&&(ch.videoCount||0)<6?`⚠ Hari ke-${dayNum}`:ch.stage===1&&dayNum>=4&&dayNum<6?`⚡ Hari ke-${dayNum}`:ch.stage===1&&dayNum>=6&&(ch.videoCount||0)>=6?`✓ Hari ke-${dayNum}`:`Hari ke-${dayNum}`}</span>${manualBadge}${downgradeBadge}${stTag}</div><div class="row-metric"><div class="val">${rmVal}</div><div class="lbl">${rmLbl}</div>${rmMini}</div><div class="row-actions" onclick="event.stopPropagation()">${apiKeys.length?`<button class="btn btn-sm btn-icon" onclick="refreshOne('${ch.id}')">${loading[ch.id]?'<span class="spin">↻</span>':"↻"}</button>`:""}<a href="${ytUrl}" target="_blank" class="btn btn-sm btn-icon" style="text-decoration:none">↗</a><button class="btn btn-sm btn-icon" onclick="removeChannel('${ch.id}')" style="color:var(--danger)">✕</button></div><div class="row-exp-btn">▼</div></div>${notifStrip}${detail}</div>`;
+}
+function render(){
+  document.getElementById("stats").innerHTML=`<div class="stat"><div class="lbl">Total</div><div class="num">${channels.length}</div></div><div class="stat s1"><div class="lbl">Tahap 1</div><div class="num">${cnt(1)}</div></div><div class="stat s2"><div class="lbl">Tahap 2</div><div class="num">${cnt(2)}</div></div><div class="stat s3"><div class="lbl">Tahap 3</div><div class="num">${cnt(3)}</div></div>`;
+  document.getElementById("filters").innerHTML=[{v:"all",l:`Semua (${channels.length})`},{v:"1",l:`Tahap 1 (${cnt(1)})`},{v:"2",l:`Tahap 2 (${cnt(2)})`},{v:"3",l:`Tahap 3 (${cnt(3)})`}].map(t=>`<button class="ftab${filter===t.v?" active":""}" onclick="filter='${t.v}';render()">${t.l}</button>`).join("");
+  let shown=filter==="all"?[...channels]:channels.filter(c=>c.stage===parseInt(filter));
+  shown.sort((a,b)=>{
+    const pa=(isUrgent(a)||isStage1Late(a))?0:isNearStage2(a)?1:2;
+    const pb=(isUrgent(b)||isStage1Late(b))?0:isNearStage2(b)?1:2;
+    return pa-pb;
+  });
+  document.getElementById("list").innerHTML=shown.length===0?`<div class="empty"><div class="ico">📺</div><h3>${channels.length===0?"Belum ada channel":"Tidak ada channel di filter ini"}</h3></div>`:shown.map(renderRow).join("");
+  renderApiKeys();updateApiSum();renderNewAlerts();
+}
+// Sync dari Sheets setiap 5 menit (cek data tim lain) — diperpanjang dari 2 menit
+// agar tidak overwrite saat user sedang aktif tambah channel
+setInterval(()=>{
+  if(document.getElementById("app").style.display!=="none"){
+    loadFromSheets();
+  }
+},300000);
+// Cek auto-refresh setiap menit (untuk trigger tepat waktu kalau tab sudah terbuka)
+setInterval(()=>{
+  if(document.getElementById("app").style.display!=="none"){
+    checkAutoRefresh();
+  }
+},60000);
+init();
+</script>
+
+
+</body></html>
