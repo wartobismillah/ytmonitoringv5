@@ -228,6 +228,41 @@ header{position:sticky;top:0;background:var(--bg);z-index:20;padding:12px 0 10px
   .s2-notif-hd{background:#1a3a1a;border-color:#2e7d32;color:#81c784}
 }
 @media(max-width:600px){.s2-notif-item{flex-wrap:wrap}.s2-notif-dismiss{margin-left:46px;margin-top:4px}}
+
+/* ── Tahap 1 Lanjutan badge + stat ── */
+.tag-ext1{background:#ede7f6;color:#4527a0;border:1px solid #b39ddb;font-weight:700;font-size:10px;padding:2px 7px;border-radius:6px}
+@media(prefers-color-scheme:dark){.tag-ext1{background:#2a1f47;color:#cdb8f0;border-color:#5e35b1}}
+.stat.sx .lbl,.stat.sx .num{color:#4527a0}
+@media(prefers-color-scheme:dark){.stat.sx .lbl,.stat.sx .num{color:#cdb8f0}}
+.stats{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+
+/* ── Error/Banned row ── */
+.ch-row.err-row{background:rgba(120,90,90,0.08);border-left:4px solid #8d6e63}
+.ch-row.err-row .row-head{background:transparent;cursor:default}
+.tag-err{background:#f3e6e6;color:#8d3a3a;border:1px solid #e0c2c2;font-weight:700;font-size:10px;padding:2px 7px;border-radius:6px}
+.row-notif-strip.err-strip{background:rgba(120,90,90,0.14);color:#8d3a3a}
+@media(prefers-color-scheme:dark){
+  .ch-row.err-row{background:rgba(255,255,255,0.05)}
+  .tag-err{background:#3a2e2e;color:#d9a8a8;border-color:#5c4444}
+  .row-notif-strip.err-strip{background:rgba(255,255,255,0.07);color:#d9a8a8}
+}
+
+/* ── Sampah (soft-deleted) row ── */
+.ch-row.trashed{opacity:.6}
+.ch-row.trashed:hover{opacity:.85}
+
+/* ── Toast notifications ── */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;min-width:240px;max-width:340px;background:var(--surf);border:1px solid var(--bdr2);border-left:4px solid var(--txt3);border-radius:var(--r-sm);box-shadow:0 4px 16px rgba(0,0,0,0.18);padding:10px 14px;font-size:12px;color:var(--txt);display:flex;align-items:center;gap:9px;transform:translateX(120%);opacity:0;transition:transform .25s ease,opacity .25s ease}
+.toast.show{transform:translateX(0);opacity:1}
+.toast.hide{transform:translateX(120%);opacity:0}
+.toast.toast-success{border-left-color:var(--ok)}
+.toast.toast-error{border-left-color:var(--danger)}
+.toast.toast-warning{border-left-color:var(--warn)}
+.toast.toast-info{border-left-color:var(--b-bar)}
+.toast-ico{font-size:14px;flex-shrink:0;line-height:1}
+.toast-msg{flex:1;line-height:1.45}
+@media(max-width:600px){.toast-container{left:12px;right:12px;bottom:12px}.toast{max-width:none}}
 </style>
 </head>
 <body>
@@ -484,6 +519,9 @@ UCxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" style="width:100%;padding:10px 12
  </div>
 </div>
 
+<!-- Toast notifications -->
+<div class="toast-container" id="toast-container"></div>
+
 <script>
 // ── INIT ──────────────────────────────────────────────────
 let channels = [], apiKeys = [];
@@ -493,6 +531,26 @@ let newStage2Alerts = []; // notif channel baru masuk Tahap 2, di-share via Shee
 let activeKeyIdx = 0, filter = "all";
 let expanded = new Set(), loading = {};
 let generatedHtml = "";
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ── Toast notification system (replaces native alert() for routine info) ──
+let _toastSeq = 0;
+function showToast(message, type = "info") {
+  const el = document.getElementById("toast-container");
+  if (!el) return;
+  const icoMap = { success: "✓", error: "⚠", warning: "⚡", info: "ℹ" };
+  const div = document.createElement("div");
+  div.className = "toast toast-" + type;
+  div.id = "toast-" + (++_toastSeq);
+  div.innerHTML = `<span class="toast-ico">${icoMap[type] || icoMap.info}</span><span class="toast-msg">${message}</span>`;
+  el.appendChild(div);
+  requestAnimationFrame(() => div.classList.add("show"));
+  setTimeout(() => {
+    div.classList.remove("show");
+    div.classList.add("hide");
+    setTimeout(() => div.remove(), 300);
+  }, 3500);
+}
 
 function init() {
   // Kalau config sudah tertanam di file, langsung ke PIN
@@ -622,7 +680,7 @@ function setSyncSt(m,c){const el=document.getElementById("sync-st");if(!el)retur
 
 // ── API Keys ──────────────────────────────────────────────
 function toggleApiPanel(){const p=document.getElementById("api-panel");p.style.display=p.style.display==="none"?"block":"none";if(p.style.display==="block")renderApiKeys();}
-function addApiKey(){const inp=document.getElementById("new-key-inp");const v=inp.value.trim();if(!v||!v.startsWith("AIza")){alert("Format key tidak valid.");return;}if(apiKeys.find(k=>k.key===v)){alert("Key sudah ada.");return;}apiKeys.push({key:v,label:"Key "+(apiKeys.length+1),status:"idle"});inp.value="";renderApiKeys();updateApiSum();saveToSheets();}
+function addApiKey(){const inp=document.getElementById("new-key-inp");const v=inp.value.trim();if(!v||!v.startsWith("AIza")){showToast("Format key tidak valid.","error");return;}if(apiKeys.find(k=>k.key===v)){showToast("Key sudah ada.","warning");return;}apiKeys.push({key:v,label:"Key "+(apiKeys.length+1),status:"idle"});inp.value="";renderApiKeys();updateApiSum();saveToSheets();showToast("API key ditambahkan.","success");}
 function removeApiKey(i){if(!confirm("Hapus key ini?"))return;apiKeys.splice(i,1);apiKeys.forEach((k,j)=>{if(k.label.startsWith("Key "))k.label="Key "+(j+1);});if(activeKeyIdx>=apiKeys.length)activeKeyIdx=0;renderApiKeys();updateApiSum();saveToSheets();}
 function renderApiKeys(){const el=document.getElementById("api-keys-list");if(!el)return;if(!apiKeys.length){el.innerHTML=`<div style="font-size:12px;color:var(--txt3);padding:4px 0">Belum ada API key.</div>`;return;}el.innerHTML=apiKeys.map((k,i)=>`<div class="api-key-row"><input type="password" value="${k.key}" readonly style="cursor:default"><span class="key-st ${i===activeKeyIdx?"active":k.status}">${i===activeKeyIdx?"▶ Aktif":k.status==="err"?"⚠ Limit":k.status==="ok"?"✓ OK":"Idle"}</span><button class="btn btn-sm btn-icon" onclick="removeApiKey(${i})">✕</button></div>`).join("");}
 function updateApiSum(){const el=document.getElementById("api-sum");if(!el)return;const ok=apiKeys.filter(k=>k.status!=="err").length;el.textContent=!apiKeys.length?"Belum ada key":`${apiKeys.length} key · ${ok} aktif`;}
@@ -727,14 +785,47 @@ function isStage1Late(ch){
   if(day===0)return false; // belum ada video sama sekali, belum mulai
   return day>(ch.videoCount||0); // hari berjalan lebih banyak dari video = ada hari kosong
 }
+function yesterday(){
+  const d=new Date();d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// Tahap 1 Lanjutan: channel ketinggalan jadwal awal (6 hari pertama) TAPI sedang aktif
+// direvisi lagi (upload hari ini/kemarin). Ini lapisan filter tambahan di atas Tahap 1,
+// bukan tahap eksklusif baru — channelnya tetap stage===1 dan tetap muncul di tab "Tahap 1".
+function isStage1Extended(ch){
+  if(ch.stage!==1)return false;
+  const avg=avgViews(ch.videos);
+  const s2t=arSettings.stage2Threshold||100;
+  if(avg!==null&&avg>=s2t)return false; // sudah layak Tahap 2, bukan kasus "lanjutan"
+  const day=dayFromFirst(ch);
+  const vc=ch.videoCount||0;
+  if(day===0)return false; // belum pernah mulai
+  if(!(day>6||vc>6))return false; // masih dalam periode evaluasi 6 hari awal
+  if(!(vc<day))return false; // tidak ada gap / tidak ketinggalan streak harian
+  const lu=lastUpload(ch);
+  if(!lu)return false;
+  const luLocal=localDate(lu);
+  return luLocal===today()||luLocal===yesterday(); // sedang aktif upload lagi utk revival
+}
 function lastUpload(ch){if(!ch.videos?.length)return null;return[...ch.videos].sort((a,b)=>new Date(b.publishedAt)-new Date(a.publishedAt))[0].publishedAt;}
 function firstVid(ch){if(!ch.videos?.length)return null;return[...ch.videos].sort((a,b)=>new Date(a.publishedAt)-new Date(b.publishedAt))[0].publishedAt;}
 
 // ── YouTube API ───────────────────────────────────────────
-async function apiFetch(url,retried=false){
+async function apiFetch(url,attempt=0){
   const key=getActiveKey();if(!key)throw new Error("Tidak ada API key.");
   const r=await fetch(url+(url.includes("?")?"&":"?")+"key="+key);const d=await r.json();
-  if(d.error){if((d.error.code===403||d.error.code===429)&&!retried){markKeyErr(key);const nk=getActiveKey();if(nk&&nk!==key)return apiFetch(url,true);}throw new Error(d.error.message);}
+  if(d.error){
+    const code=d.error.code;
+    // 403 (quota habis) / 429 (rate limit) — rotasi ke key lain & retry, dibatasi sebanyak jumlah key
+    // yang ada supaya tidak infinite loop. 429 dikasih jeda kecil dulu sebelum retry.
+    if((code===403||code===429)&&attempt<Math.max(apiKeys.length,1)){
+      markKeyErr(key);
+      if(code===429)await sleep(400+Math.random()*300);
+      const nk=getActiveKey();
+      if(nk)return apiFetch(url,attempt+1);
+    }
+    throw new Error(d.error.message);
+  }
   markKeyOk(key);return d;
 }
 async function resolveHandle(h){const d=await apiFetch(`https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(h)}`);if(!d.items?.length)throw new Error("Channel tidak ditemukan: "+h);return d.items[0].id;}
@@ -826,7 +917,7 @@ async function doAdd(){
       let sd=fv?localDate(fv):today();
       if(stage===2&&data.videos.length>=6){const sv=[...data.videos].sort((a,b)=>new Date(a.publishedAt)-new Date(b.publishedAt));sd=localDate(sv[5].publishedAt);}
       else if(stage===3)sd=today();
-      const newCh={id:Date.now().toString()+"_"+i,inputValue:line,ytId,stage,stageDate:sd,firstVideoDate:fv?localDate(fv):null,notes:"",addedAt:new Date().toISOString(),...data};
+      const newCh={id:Date.now().toString()+"_"+i,inputValue:line,ytId,stage,stageDate:sd,firstVideoDate:fv?localDate(fv):null,notes:"",addedAt:new Date().toISOString(),isError:false,errorMessage:null,isTrashed:false,...data};
       channels.push(newCh);
       lastAddedId=newCh.id;
       successCount++;
@@ -851,8 +942,11 @@ async function doAdd(){
     closeAdd();
     expanded.add(lastAddedId);
     render();
+    showToast("Channel berhasil ditambahkan.","success");
     return;
   }
+
+  showToast(`Import selesai — ${successCount} dari ${total} channel berhasil ditambahkan.`,failList.length?"warning":"success");
 
   // Tampilkan ringkasan hasil import massal
   const resEl=document.getElementById("bulk-result");
@@ -903,36 +997,57 @@ async function refreshOne(id,skipSave=false){
         });
       }
     }
-    channels=channels.map(c=>c.id===id?{...c,...data,stage:ns,stageDate:sd,firstVideoDate:nfd,stageOverride:ch.stageOverride,downgradeNote}:c);
+    // Berhasil — bersihkan flag error kalau sebelumnya channel ini pernah gagal/banned
+    channels=channels.map(c=>c.id===id?{...c,...data,stage:ns,stageDate:sd,firstVideoDate:nfd,stageOverride:ch.stageOverride,downgradeNote,isError:false,errorMessage:null,erroredAt:null}:c);
     if(!skipSave)await saveToSheets();}
-  catch(e){alert("Gagal refresh:\n"+e.message);}
+  catch(e){
+    // Non-blocking: channel dihapus/disuspend di YouTube — tandai isError, JANGAN alert()
+    // supaya tidak menghentikan loop background refreshAll().
+    const msg=e.message||"Channel tidak dapat diakses (kemungkinan dihapus/disuspend)";
+    channels=channels.map(c=>c.id===id?{...c,isError:true,errorMessage:msg,erroredAt:new Date().toISOString()}:c);
+    showToast(`Gagal refresh "${ch.name||ch.inputValue||"channel"}": ${msg}`,"error");
+    if(!skipSave)await saveToSheets();
+  }
   loading[id]=false;render();
 }
 async function refreshAll(auto=false){
-  if(!apiKeys.length){if(!auto)alert("Tambah API Key dulu.");return;}
+  if(!apiKeys.length){if(!auto)showToast("Tambah API Key dulu.","warning");return;}
+  // Channel yang sudah di-sampah-kan (soft delete) dilewati — tidak perlu buang kuota API utk channel yang sengaja diabaikan
+  const targets=channels.filter(c=>!c.isTrashed);
   const btn=document.getElementById("btn-ref-all"),ico=document.getElementById("ref-ico");
   btn.disabled=true;ico.className="spin";
-  const total=channels.length;
-  for(let i=0;i<channels.length;i++){
-    const ch=channels[i];
+  const total=targets.length;
+  for(let i=0;i<targets.length;i++){
+    const ch=targets[i];
     const pct=Math.round((i/total)*100);
     const bar="█".repeat(Math.round(pct/10))+"░".repeat(10-Math.round(pct/10));
     setSyncSt(`⟳ Refresh ${i+1}/${total} · ${pct}% [${bar}] — ${ch.name||ch.inputValue}...`,"#3266ad");
     await refreshOne(ch.id, true);
+    // Jeda 300-500ms antar channel — mencegah 429 (Too Many Requests) saat refresh puluhan channel beruntun
+    if(i<targets.length-1) await sleep(300+Math.random()*200);
   }
-  lastYTRefresh=today();
+  lastYTRefresh=new Date().toISOString(); // simpan timestamp ISO penuh (fix bug "07:00 AM" UTC)
   await saveToSheets();
   ico.className="";btn.disabled=false;
-  setSyncSt("✓ Semua "+total+" channel di-refresh — "+fmtDtT(new Date().toISOString()),"var(--ok)");
+  setSyncSt("✓ Semua "+total+" channel di-refresh — "+fmtDtT(lastYTRefresh),"var(--ok)");
+  showToast(`Refresh selesai — ${total} channel diperbarui.`,"success");
   renderArBar();
 }
 function changeStage(id,s){channels=channels.map(c=>c.id===id?{...c,stage:parseInt(s),stageDate:today(),stageOverride:true}:c);saveToSheets();render();}
 function resetStageOverride(id){channels=channels.map(c=>c.id===id?{...c,stageOverride:false}:c);saveToSheets();render();}
 function updateNote(id,v){channels=channels.map(c=>c.id===id?{...c,notes:v}:c);saveToSheets();}
-function removeChannel(id){if(!confirm("Hapus channel ini?"))return;channels=channels.filter(c=>c.id!==id);expanded.delete(id);saveToSheets();render();}
+function removeChannel(id){if(!confirm("Hapus channel ini secara permanen?"))return;channels=channels.filter(c=>c.id!==id);expanded.delete(id);saveToSheets();render();}
+function toggleTrash(id){
+  const ch=channels.find(c=>c.id===id);if(!ch)return;
+  const newVal=!ch.isTrashed;
+  channels=channels.map(c=>c.id===id?{...c,isTrashed:newVal,trashedAt:newVal?new Date().toISOString():null}:c);
+  expanded.delete(id);
+  saveToSheets();render();
+  showToast(newVal?"Channel dipindahkan ke Sampah.":"Channel dikembalikan dari Sampah.","info");
+}
 function toggleExpand(id){expanded.has(id)?expanded.delete(id):expanded.add(id);render();}
 function exportData(){const b=new Blob([JSON.stringify({channels,exportedAt:new Date().toISOString()},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="yt-monitor-"+today()+".json";a.click();}
-function importData(evt){const file=evt.target.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.channels){channels=d.channels;saveToSheets();render();alert("Import berhasil! "+channels.length+" channel.");}else alert("Format tidak dikenali.");}catch(e){alert("File tidak valid.");}evt.target.value="";};r.readAsText(file);}
+function importData(evt){const file=evt.target.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.channels){channels=d.channels;saveToSheets();render();showToast("Import berhasil! "+channels.length+" channel.","success");}else showToast("Format tidak dikenali.","error");}catch(e){showToast("File tidak valid.","error");}evt.target.value="";};r.readAsText(file);}
 
 // ── Auto-refresh logic ───────────────────────────────────
 function checkAutoRefresh(){
@@ -940,12 +1055,15 @@ function checkAutoRefresh(){
   if(!apiKeys.length)return;
   if(!channels.length)return;
   const nowHour=new Date().getHours();
+  // lastYTRefresh sekarang disimpan sbg ISO timestamp penuh (bukan "YYYY-MM-DD" lagi) — bandingkan
+  // tanggal lokalnya pakai localDate() supaya tidak salah parse jadi 07:00 UTC+7.
+  const refreshedToday=lastYTRefresh&&localDate(lastYTRefresh)===today();
   // Auto-refresh kalau: belum refresh hari ini DAN jam sekarang >= jam setting
-  if(lastYTRefresh!==today()&&nowHour>=arSettings.hour){
+  if(!refreshedToday&&nowHour>=arSettings.hour){
     setSyncSt("⟳ Belum refresh hari ini — auto-refresh dimulai...","#e65100");
     setTimeout(()=>refreshAll(true),1500); // delay sedikit biar user lihat notifnya
-  } else if(lastYTRefresh===today()){
-    setSyncSt("✓ YouTube sudah di-refresh hari ini — "+fmtDtT(new Date(lastYTRefresh).toISOString()),"var(--ok)");
+  } else if(refreshedToday){
+    setSyncSt("✓ YouTube sudah di-refresh hari ini — "+fmtDtT(lastYTRefresh),"var(--ok)");
   } else {
     // Belum waktunya (jam belum sampai setting)
     setSyncSt(`ℹ Data dari Sheets. Auto-refresh akan jalan saat jam ${String(arSettings.hour).padStart(2,'0')}:00`,"var(--txt3)");
@@ -976,10 +1094,11 @@ function renderArBar(){
   toggle.style.color=arSettings.enabled?"var(--ok)":"var(--txt3)";
   hourSel.value=arSettings.hour;
   hourSel.disabled=!arSettings.enabled;
+  const refreshedToday=lastYTRefresh&&localDate(lastYTRefresh)===today();
   lastEl.textContent=lastYTRefresh
-    ?(lastYTRefresh===today()?"✓ Sudah refresh hari ini":"Terakhir refresh: "+fmtDtS(lastYTRefresh))
+    ?(refreshedToday?"✓ Sudah refresh hari ini — "+fmtDtT(lastYTRefresh):"Terakhir refresh: "+fmtDtT(lastYTRefresh))
     :"Belum pernah refresh otomatis";
-  lastEl.style.color=lastYTRefresh===today()?"var(--ok)":"var(--txt3)";
+  lastEl.style.color=refreshedToday?"var(--ok)":"var(--txt3)";
 }
 
 // ── Notif Tahap 2 baru ───────────────────────────────────
@@ -998,9 +1117,17 @@ function dismissAlert(alertId){
 }
 
 // ── Render ────────────────────────────────────────────────
-const cnt=s=>channels.filter(c=>c.stage===s).length;
+const cnt=s=>channels.filter(c=>c.stage===s&&!c.isTrashed&&!c.isError).length;
+// Baris khusus untuk channel yang dihapus/disuspend di YouTube (isError===true).
+// Tidak bisa di-expand (tidak ada data video utk ditampilkan), cukup tunjukkan pesan errornya.
+function renderErrorRow(ch){
+  const label=ch.name||ch.inputValue||ch.ytId||"Channel tidak diketahui";
+  const ini=inits(ch.name||ch.inputValue);
+  return `<div class="ch-row err-row" id="row-${ch.id}"><div class="row-head"><div class="row-av">${ch.thumbnail?`<img src="${ch.thumbnail}" alt="">`:ini}</div><span class="row-name">${label}</span><div class="row-badges"><span class="tag-sm tag-err">⚠ Error</span></div><div class="row-actions" onclick="event.stopPropagation()">${apiKeys.length?`<button class="btn btn-sm btn-icon" onclick="refreshOne('${ch.id}')" title="Coba refresh lagi">${loading[ch.id]?'<span class="spin">↻</span>':"↻"}</button>`:""}${ch.ytId?`<a href="https://youtube.com/channel/${ch.ytId}" target="_blank" class="btn btn-sm btn-icon" style="text-decoration:none" title="Buka channel">↗</a>`:""}<button class="btn btn-sm btn-icon" onclick="toggleTrash('${ch.id}')" title="Pindah ke sampah">🗑️</button><button class="btn btn-sm btn-icon" onclick="removeChannel('${ch.id}')" style="color:var(--danger)" title="Hapus permanen">✕</button></div></div><div class="row-notif-strip err-strip">🚫 ${(ch.errorMessage||"Channel tidak dapat diakses (kemungkinan dihapus/disuspend)").toString()}</div></div>`;
+}
 function renderRow(ch){
-  const avg=avgViews(ch.videos),urgent=isUrgent(ch),s1late=isStage1Late(ch),near2=isNearStage2(ch),exp=expanded.has(ch.id),ini=inits(ch.name);
+  if(ch.isError)return renderErrorRow(ch);
+  const avg=avgViews(ch.videos),urgent=isUrgent(ch),s1late=isStage1Late(ch),near2=isNearStage2(ch),ext1=isStage1Extended(ch),exp=expanded.has(ch.id),ini=inits(ch.name);
   const ytUrl=`https://youtube.com/channel/${ch.ytId}`;
   let rmVal="—",rmLbl="",rmMini="";
   if(ch.stage===1){rmVal=fmt(avg);rmLbl="avg views";}
@@ -1013,7 +1140,9 @@ function renderRow(ch){
   }
   else{rmVal="✓ Siap";rmLbl="transfer";}
   let stTag="";
-  if(ch.stage===1&&s1late){
+  if(ch.stage===1&&ext1){
+    stTag=`<span class="tag-sm tag-ext1">🔄 Tahap 1 Lanjutan</span>`;
+  } else if(ch.stage===1&&s1late){
     const missing=dayFromFirst(ch)-(ch.videoCount||0);
     stTag=`<span class="tag-sm tag-urg">⚠ Telat ${missing} video</span>`;
   } else if(ch.stage===1&&near2){
@@ -1096,17 +1225,42 @@ function renderRow(ch){
   } else if(ch.stage===1&&dayNum>=6&&(ch.videoCount||0)>=6&&avg!==null&&avg>=(arSettings.warnThreshold||70)){
     notifStrip=`<div class="row-notif-strip strip-yellow">⚡ Avg views ${avg} — mendekati syarat Tahap 2</div>`;
   }
-  return `<div class="ch-row${urgent||s1late?" urgent":near2?" near2":""}${exp?" expanded":""}" id="row-${ch.id}"><div class="row-head" onclick="toggleExpand('${ch.id}')"><div class="row-av">${ch.thumbnail?`<img src="${ch.thumbnail}" alt="">`:ini}</div><span class="row-name">${ch.name||ch.inputValue}</span><div class="row-badges"><span class="badge badge-${ch.stage}">Tahap ${ch.stage}</span><span class="${dayBadgeClass}">${ch.stage===1&&dayNum>=6&&(ch.videoCount||0)<6?`⚠ Hari ke-${dayNum}`:ch.stage===1&&dayNum>=4&&dayNum<6?`⚡ Hari ke-${dayNum}`:ch.stage===1&&dayNum>=6&&(ch.videoCount||0)>=6?`✓ Hari ke-${dayNum}`:`Hari ke-${dayNum}`}</span>${manualBadge}${downgradeBadge}${stTag}</div><div class="row-metric"><div class="val">${rmVal}</div><div class="lbl">${rmLbl}</div>${rmMini}</div><div class="row-actions" onclick="event.stopPropagation()">${apiKeys.length?`<button class="btn btn-sm btn-icon" onclick="refreshOne('${ch.id}')">${loading[ch.id]?'<span class="spin">↻</span>':"↻"}</button>`:""}<a href="${ytUrl}" target="_blank" class="btn btn-sm btn-icon" style="text-decoration:none">↗</a><button class="btn btn-sm btn-icon" onclick="removeChannel('${ch.id}')" style="color:var(--danger)">✕</button></div><div class="row-exp-btn">▼</div></div>${notifStrip}${detail}</div>`;
+  return `<div class="ch-row${ch.isTrashed?" trashed":(urgent||s1late?" urgent":near2?" near2":"")}${exp?" expanded":""}" id="row-${ch.id}"><div class="row-head" onclick="toggleExpand('${ch.id}')"><div class="row-av">${ch.thumbnail?`<img src="${ch.thumbnail}" alt="">`:ini}</div><span class="row-name">${ch.name||ch.inputValue}</span><div class="row-badges"><span class="badge badge-${ch.stage}">Tahap ${ch.stage}</span><span class="${dayBadgeClass}">${ch.stage===1&&dayNum>=6&&(ch.videoCount||0)<6?`⚠ Hari ke-${dayNum}`:ch.stage===1&&dayNum>=4&&dayNum<6?`⚡ Hari ke-${dayNum}`:ch.stage===1&&dayNum>=6&&(ch.videoCount||0)>=6?`✓ Hari ke-${dayNum}`:`Hari ke-${dayNum}`}</span>${manualBadge}${downgradeBadge}${stTag}</div><div class="row-metric"><div class="val">${rmVal}</div><div class="lbl">${rmLbl}</div>${rmMini}</div><div class="row-actions" onclick="event.stopPropagation()">${!ch.isTrashed&&apiKeys.length?`<button class="btn btn-sm btn-icon" onclick="refreshOne('${ch.id}')" title="Refresh">${loading[ch.id]?'<span class="spin">↻</span>':"↻"}</button>`:""}<a href="${ytUrl}" target="_blank" class="btn btn-sm btn-icon" style="text-decoration:none" title="Buka channel">↗</a>${ch.isTrashed?`<button class="btn btn-sm" onclick="toggleTrash('${ch.id}')" style="color:var(--ok)" title="Kembalikan dari sampah">↩ Kembalikan</button>`:`<button class="btn btn-sm btn-icon" onclick="toggleTrash('${ch.id}')" title="Pindah ke sampah">🗑️</button>`}<button class="btn btn-sm btn-icon" onclick="removeChannel('${ch.id}')" style="color:var(--danger)" title="Hapus permanen">✕</button></div><div class="row-exp-btn">▼</div></div>${notifStrip}${detail}</div>`;
 }
 function render(){
-  document.getElementById("stats").innerHTML=`<div class="stat"><div class="lbl">Total</div><div class="num">${channels.length}</div></div><div class="stat s1"><div class="lbl">Tahap 1</div><div class="num">${cnt(1)}</div></div><div class="stat s2"><div class="lbl">Tahap 2</div><div class="num">${cnt(2)}</div></div><div class="stat s3"><div class="lbl">Tahap 3</div><div class="num">${cnt(3)}</div></div>`;
-  document.getElementById("filters").innerHTML=[{v:"all",l:`Semua (${channels.length})`},{v:"1",l:`Tahap 1 (${cnt(1)})`},{v:"2",l:`Tahap 2 (${cnt(2)})`},{v:"3",l:`Tahap 3 (${cnt(3)})`}].map(t=>`<button class="ftab${filter===t.v?" active":""}" onclick="filter='${t.v}';render()">${t.l}</button>`).join("");
-  let shown=filter==="all"?[...channels]:channels.filter(c=>c.stage===parseInt(filter));
-  shown.sort((a,b)=>{
-    const pa=(isUrgent(a)||isStage1Late(a))?0:isNearStage2(a)?1:2;
-    const pb=(isUrgent(b)||isStage1Late(b))?0:isNearStage2(b)?1:2;
-    return pa-pb;
-  });
+  const ext1List=channels.filter(c=>!c.isTrashed&&!c.isError&&isStage1Extended(c));
+  const errList=channels.filter(c=>c.isError&&!c.isTrashed);
+  const trashList=channels.filter(c=>c.isTrashed);
+  const activeTotal=channels.filter(c=>!c.isTrashed&&!c.isError).length;
+
+  document.getElementById("stats").innerHTML=`<div class="stat"><div class="lbl">Total</div><div class="num">${activeTotal}</div></div><div class="stat s1"><div class="lbl">Tahap 1</div><div class="num">${cnt(1)}</div></div><div class="stat sx"><div class="lbl">Tahap 1 Lanjutan</div><div class="num">${ext1List.length}</div></div><div class="stat s2"><div class="lbl">Tahap 2</div><div class="num">${cnt(2)}</div></div><div class="stat s3"><div class="lbl">Tahap 3</div><div class="num">${cnt(3)}</div></div>`;
+  document.getElementById("filters").innerHTML=[
+    {v:"all",l:`Semua (${activeTotal})`},
+    {v:"1",l:`Tahap 1 (${cnt(1)})`},
+    {v:"1ext",l:`Tahap 1 Lanjutan (${ext1List.length})`},
+    {v:"2",l:`Tahap 2 (${cnt(2)})`},
+    {v:"3",l:`Tahap 3 (${cnt(3)})`},
+    {v:"error",l:`Error/Banned (${errList.length})`},
+    {v:"trash",l:`Sampah (${trashList.length})`}
+  ].map(t=>`<button class="ftab${filter===t.v?" active":""}" onclick="filter='${t.v}';render()">${t.l}</button>`).join("");
+  let shown;
+  if(filter==="error")shown=[...errList];
+  else if(filter==="trash")shown=[...trashList];
+  else if(filter==="1ext")shown=[...ext1List];
+  else if(filter==="all")shown=channels.filter(c=>!c.isTrashed&&!c.isError);
+  else shown=channels.filter(c=>!c.isTrashed&&!c.isError&&c.stage===parseInt(filter));
+
+  if(filter==="trash"){
+    shown.sort((a,b)=>new Date(b.trashedAt||0)-new Date(a.trashedAt||0));
+  } else if(filter==="error"){
+    shown.sort((a,b)=>new Date(b.erroredAt||0)-new Date(a.erroredAt||0));
+  } else {
+    shown.sort((a,b)=>{
+      const pa=(isUrgent(a)||isStage1Late(a))?0:isNearStage2(a)?1:2;
+      const pb=(isUrgent(b)||isStage1Late(b))?0:isNearStage2(b)?1:2;
+      return pa-pb;
+    });
+  }
   document.getElementById("list").innerHTML=shown.length===0?`<div class="empty"><div class="ico">📺</div><h3>${channels.length===0?"Belum ada channel":"Tidak ada channel di filter ini"}</h3></div>`:shown.map(renderRow).join("");
   renderApiKeys();updateApiSum();renderNewAlerts();
 }
